@@ -8,3 +8,72 @@ body {
   margin: 0;
   min-width: 320px;
 }
+
+/* =========================================================
+   HERO — TECHNOLOGY FADE
+   ========================================================= */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================
+   HERO — TECHNOLOGY PROGRESS
+   ========================================================= */
+
+@keyframes progress {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   NAVBAR — MOVING GLOW
+   ========================================================= */
+
+@keyframes navbarGlow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-navbar-glow {
+  animation: navbarGlow 5s linear infinite;
+}
+
+/* =========================================================
+   NAVBAR — MOBILE PULSE
+   ========================================================= */
+
+@keyframes navbarPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.08);
+  }
+
+  50% {
+    opacity: 0.9;
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.18);
+  }
+}
+
+.animate-navbar-pulse {
+  animation: navbarPulse 2.5s ease-in-out infinite;
+}

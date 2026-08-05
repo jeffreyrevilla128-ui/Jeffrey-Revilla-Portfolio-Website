@@ -1,4 +1,61 @@
+import { useEffect, useRef, useState } from 'react'
+
+const principles = [
+  {
+    number: '01',
+    title: 'Understand the problem',
+    description:
+      'I start with the workflow and the people using it, not the tech stack.',
+  },
+  {
+    number: '02',
+    title: 'Build practical solutions',
+    description:
+      'Every decision is weighed against what the problem actually needs.',
+  },
+  {
+    number: '03',
+    title: 'Take ownership',
+    description:
+      'From first line of code to the last bug fixed, it stays my responsibility.',
+  },
+]
+
+/**
+ * Lightweight scroll-reveal hook.
+ * Fades + slides an element in once it enters the viewport.
+ */
+function useReveal<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.2 },
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  return { ref, isVisible }
+}
+
 function About() {
+  const header = useReveal<HTMLDivElement>()
+  const photo = useReveal<HTMLDivElement>()
+  const intro = useReveal<HTMLDivElement>()
+  const approach = useReveal<HTMLDivElement>()
+
   return (
     <section
       id="about"
@@ -7,97 +64,121 @@ function About() {
       <div className="mx-auto max-w-7xl">
 
         {/* Section Header */}
-        <div className="max-w-3xl">
+        <div
+          ref={header.ref}
+          className={`max-w-3xl transition-all duration-700 ease-out ${
+            header.isVisible
+              ? 'translate-y-0 opacity-100'
+              : 'translate-y-4 opacity-0'
+          }`}
+        >
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-neutral-500">
             About Me
           </p>
 
           <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
-            I build software around problems, not just technology.
+            Beyond the code.
           </h2>
         </div>
 
-        {/* About Content */}
-        <div className="mt-12 grid gap-12 lg:grid-cols-[1.2fr_0.8fr] lg:gap-20">
+        {/* Photo + Intro */}
+        <div className="mt-16 grid items-center gap-14 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
 
-          {/* Main Description */}
-          <div className="space-y-6 text-base leading-8 text-neutral-400 sm:text-lg">
-            <p>
-              I&apos;m a full-stack developer who enjoys turning complex
-              problems into practical and scalable web applications. My
-              experience comes largely from building real-world projects
-              where I&apos;ve worked across the frontend, backend, database,
-              and application logic.
-            </p>
+          {/* Photo */}
+          <div
+            ref={photo.ref}
+            className={`relative transition-all duration-700 ease-out ${
+              photo.isVisible
+                ? 'translate-y-0 opacity-100'
+                : 'translate-y-6 opacity-0'
+            }`}
+          >
+            {/* Decorative glow, echoes Hero background */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] bg-white/[0.03] blur-3xl"
+            />
 
-            <p>
-              Rather than focusing only on writing code, I approach
-              development by first understanding the problem, the people
-              using the system, and the workflow that needs to be improved.
-              From there, I build solutions that connect the different
-              pieces into a system that is easier to use and maintain.
-            </p>
+            <div className="group relative aspect-[4/5] w-full max-w-sm overflow-hidden rounded-3xl border border-white/10 bg-neutral-900 mx-auto lg:mx-0">
+              <img
+                src="/images/jeffrey-revilla.jpg"
+                alt="Jeffrey R. Revilla"
+                className="h-full w-full object-cover grayscale transition-all duration-700 ease-out group-hover:scale-105 group-hover:grayscale-0"
+              />
 
-            <p>
-              I&apos;ve worked on applications involving full-stack web
-              development, database design, API development, AI integration,
-              computer vision, and speech-to-text functionality. These
-              projects have given me experience not only in implementing
-              features, but also in debugging, testing, documenting, and
-              refining complete systems.
-            </p>
+              {/* Subtle bottom fade for a clean, editorial edge */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-neutral-950/60 to-transparent" />
+            </div>
           </div>
 
-          {/* Developer Philosophy */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
-            <p className="text-sm font-medium uppercase tracking-[0.15em] text-neutral-500">
-              My Approach
+          {/* Intro Text */}
+          <div
+            ref={intro.ref}
+            className={`space-y-6 text-base leading-8 text-neutral-400 transition-all duration-700 ease-out sm:text-lg ${
+              intro.isVisible
+                ? 'translate-y-0 opacity-100'
+                : 'translate-y-6 opacity-0'
+            }`}
+          >
+            {/*
+              Optional: swap the first sentence for something specific to
+              you — a habit, an interest, or what pulled you into building
+              things. A concrete detail here makes it unmistakably yours.
+            */}
+            <p>
+              I like knowing how things actually work before I decide how
+              to build them. Whether it&apos;s an app, a workflow, or code
+              I wrote months ago, I don&apos;t just accept that something
+              works — I want to know why.
             </p>
 
-            <div className="mt-6 space-y-6">
-              <div>
-                <h3 className="text-base font-medium text-white">
-                  Understand the problem
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-neutral-500">
-                  I focus on understanding the actual workflow and
-                  requirements before deciding how technology should be used.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="text-base font-medium text-white">
-                  Build practical solutions
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-neutral-500">
-                  I aim to build solutions that are useful, maintainable,
-                  responsive, and appropriate for the problem being solved.
-                </p>
-              </div>
-
-              <div>
-                <h3 className="text-base font-medium text-white">
-                  Take ownership
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-neutral-500">
-                  I take responsibility beyond implementation, including
-                  testing, debugging, documentation, and continuous
-                  improvement.
-                </p>
-              </div>
-            </div>
+            <p>
+              That&apos;s the mindset I bring into every project. I build
+              for the people who&apos;ll actually use the software, not
+              for how it looks in a demo, and I take that seriously from
+              the first line of code to the last fix.
+            </p>
           </div>
         </div>
 
-        {/* Bottom Statement */}
-        <div className="mt-16 border-t border-white/10 pt-8">
-          <p className="max-w-4xl text-xl font-medium leading-8 tracking-tight text-white sm:text-2xl">
-            My goal is simple: understand the challenge, build the right
-            solution, and make technology work for the people using it.
+        {/* My Approach — numbered principles */}
+        <div
+          ref={approach.ref}
+          className={`mt-20 border-t border-white/10 pt-12 transition-all duration-700 ease-out lg:mt-28 lg:pt-16 ${
+            approach.isVisible
+              ? 'translate-y-0 opacity-100'
+              : 'translate-y-6 opacity-0'
+          }`}
+        >
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-neutral-500">
+            My Approach
           </p>
+
+          <div className="mt-10 grid gap-10 sm:grid-cols-3 sm:gap-8 lg:gap-12">
+            {principles.map((principle, index) => (
+              <div
+                key={principle.number}
+                className={`transition-all duration-700 ease-out ${
+                  approach.isVisible
+                    ? 'translate-y-0 opacity-100'
+                    : 'translate-y-6 opacity-0'
+                }`}
+                style={{ transitionDelay: approach.isVisible ? `${index * 120}ms` : '0ms' }}
+              >
+                <span className="text-sm font-semibold tabular-nums text-neutral-600">
+                  {principle.number}
+                </span>
+
+                <h3 className="mt-3 text-lg font-medium text-white">
+                  {principle.title}
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-neutral-500">
+                  {principle.description}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
 
       </div>
