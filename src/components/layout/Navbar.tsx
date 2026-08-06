@@ -18,13 +18,6 @@ function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // =====================================================
-  // NAVBAR SCROLL STATE
-  // =====================================================
-
-  const [isNavbarVisible, setIsNavbarVisible] = useState(true)
-  const lastScrollY = useRef(0)
-
-  // =====================================================
   // DESKTOP MENU CLOSE TIMER
   // =====================================================
 
@@ -98,36 +91,20 @@ function Navbar() {
   }
 
   // =====================================================
-  // NAVBAR SCROLL BEHAVIOR
+  // SCROLL BEHAVIOR
+  //
+  // The navbar itself no longer hides/shows on scroll — it
+  // stays fixed and visible at all times. We still close any
+  // open menu once the page starts scrolling, so an expanded
+  // menu doesn't stay open while the user is navigating away
+  // from it.
   // =====================================================
 
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY
-      const previousScrollY = lastScrollY.current
-
-      if (currentScrollY <= 20) {
-        setIsNavbarVisible(true)
-        lastScrollY.current = currentScrollY
-        return
-      }
-
-      // Scrolling down
-      if (currentScrollY > previousScrollY) {
-        setIsNavbarVisible(false)
-
-        setIsDesktopMenuOpen(false)
-        setIsMobileMenuOpen(false)
-
-        clearDesktopCloseTimer()
-      }
-
-      // Scrolling up
-      else if (currentScrollY < previousScrollY) {
-        setIsNavbarVisible(true)
-      }
-
-      lastScrollY.current = currentScrollY
+      setIsDesktopMenuOpen(false)
+      setIsMobileMenuOpen(false)
+      clearDesktopCloseTimer()
     }
 
     window.addEventListener('scroll', handleScroll, {
@@ -151,25 +128,31 @@ function Navbar() {
 
   return (
     <header
-      className={`
+      className="
         fixed
         inset-x-0
         top-0
         z-50
-        px-5
-        pt-5
-        sm:px-8
-        transition-all
-        duration-700
-        ease-[cubic-bezier(0.22,1,0.36,1)]
-        ${
-          isNavbarVisible
-            ? 'translate-y-0 opacity-100'
-            : '-translate-y-[120%] pointer-events-none opacity-0'
-        }
-      `}
+        border-b
+        border-white/10
+        bg-neutral-950/40
+        shadow-[0_8px_32px_rgba(0,0,0,0.35)]
+        backdrop-blur-xl
+      "
     >
-      <div className="relative mx-auto flex max-w-7xl items-center justify-between">
+      <div
+        className="
+          relative
+          mx-auto
+          flex
+          max-w-7xl
+          items-center
+          justify-between
+          px-5
+          py-3
+          sm:px-8
+        "
+      >
 
         {/* =====================================================
             JRR LOGO
@@ -578,29 +561,30 @@ function Navbar() {
           MOBILE EXPANDED MENU
           ===================================================== */}
 
-      <div
-        className={`
-          mx-auto
-          mt-3
-          max-w-sm
-          overflow-hidden
-          rounded-3xl
-          border
-          border-white/10
-          bg-neutral-950/90
-          shadow-[0_0_30px_rgba(255,255,255,0.06)]
-          backdrop-blur-xl
-          transition-all
-          duration-500
-          ease-[cubic-bezier(0.22,1,0.36,1)]
-          md:hidden
-          ${
-            isMobileMenuOpen
-              ? 'max-h-[28rem] opacity-100'
-              : 'max-h-0 border-transparent opacity-0'
-          }
-        `}
-      >
+      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <div
+          className={`
+            mx-auto
+            mt-3
+            max-w-sm
+            overflow-hidden
+            rounded-3xl
+            border
+            border-white/10
+            bg-neutral-950/90
+            shadow-[0_0_30px_rgba(255,255,255,0.06)]
+            backdrop-blur-xl
+            transition-all
+            duration-500
+            ease-[cubic-bezier(0.22,1,0.36,1)]
+            md:hidden
+            ${
+              isMobileMenuOpen
+                ? 'max-h-[28rem] opacity-100'
+                : 'max-h-0 border-transparent opacity-0'
+            }
+          `}
+        >
         <nav
           aria-label="Mobile navigation"
           className="flex flex-col p-3"
@@ -652,6 +636,7 @@ function Navbar() {
             Let's Talk
           </a>
         </nav>
+        </div>
       </div>
     </header>
   )
