@@ -1,46 +1,54 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   Search,
   Code2,
-  Sparkles,
-  Layout,
-  Server,
-  Database,
-  Webhook,
-  BrainCircuit,
-  ArrowRight,
+  Gauge,
+  Mail,
 } from 'lucide-react'
 import jeffreyAbout from '../../assets/images/jeffrey-about.jpg'
 
-const capabilities = [
-  { label: 'Frontend', icon: Layout },
-  { label: 'Backend', icon: Server },
-  { label: 'Databases', icon: Database },
-  { label: 'APIs', icon: Webhook },
-  { label: 'AI Integration', icon: BrainCircuit },
+const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H7.5v-3H10V9.5C10 7.02 11.5 5.63 13.7 5.63c1.05 0 2.15.19 2.15.19v2.37h-1.21c-1.23 0-1.62.77-1.62 1.56V12h2.67l-.43 3h-2.24v6.8c4.56-.93 8-4.96 8-9.8z" />
+  </svg>
+)
+
+const LinkedinIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+  </svg>
+)
+
+const socialLinks = [
+  { label: 'Facebook', icon: FacebookIcon, href: 'https://www.facebook.com/jeffrey.romerosa.9' },
+  { label: 'Gmail', icon: Mail, href: 'mailto:jeffreyrevilla128@gmail.com' },
+  { label: 'LinkedIn', icon: LinkedinIcon, href: 'https://www.linkedin.com/in/jeffrey-revilla-9ab321417/' },
 ]
 
 const pillars = [
   {
     number: '01',
-    label: 'The Problem',
+    label: 'Understand',
+    tagline: 'Start with the problem.',
     description:
-      'I turn manual, repetitive processes into web applications that quietly make people\u2019s work faster and easier.',
+      'I first understand the workflow, the people using it, and where time, money, or effort is being lost. I build around the actual problem—not just the requested feature.',
     icon: Search,
   },
   {
     number: '02',
-    label: 'The Build',
+    label: 'Build',
+    tagline: 'Turn the problem into a solution.',
     description:
-      'End-to-end ownership \u2014 intuitive React frontends backed by scalable APIs, databases, and authentication, built to last.',
+      'I design and build practical systems around the workflow—clean interfaces, reliable backends, and the right technology to make the process simpler, faster, and easier to manage.',
     icon: Code2,
   },
   {
     number: '03',
-    label: 'The Edge',
+    label: 'Optimize',
+    tagline: 'Make the solution worth building.',
     description:
-      'AI earns its place when it solves a real problem for the user \u2014 never bolted on for novelty.',
-    icon: Sparkles,
+      'I look beyond getting the system working. I focus on maintainability, automation, scalability, and opportunities to reduce costs or create more value for the business.',
+    icon: Gauge,
   },
 ]
 
@@ -55,10 +63,6 @@ const introText = [
   "someone's work easier.",
 ].join(' ')
 
-/**
- * Lightweight scroll-reveal hook.
- * Fades + slides an element in once it enters the viewport.
- */
 function useReveal<T extends HTMLElement>() {
   const ref = useRef<T | null>(null)
   const [isVisible, setIsVisible] = useState(false)
@@ -84,10 +88,6 @@ function useReveal<T extends HTMLElement>() {
   return { ref, isVisible }
 }
 
-/**
- * Detects the user's reduced-motion preference so animations
- * can be skipped for people who've asked the OS to limit them.
- */
 function usePrefersReducedMotion() {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
 
@@ -103,154 +103,249 @@ function usePrefersReducedMotion() {
   return prefersReducedMotion
 }
 
-/**
- * Drives the "Working Across" capability card. Cycles through `length`
- * items at a slow, deliberate pace, exposing both the settled `index`
- * and a `phase` so the caller can animate the outgoing item up-and-out
- * while the incoming item fades up into place — never an abrupt swap.
- *
- * Sequence per cycle: idle (holding) -> exiting (fade + rise out) ->
- * index advances, entering (snapped below, invisible, no transition)
- * -> idle (transitions back to settled position, fading + rising in).
- * Reduced-motion users still get the rotation, just without the
- * animated phases.
- */
-function useRotatingCapability(length: number) {
-  const [index, setIndex] = useState(0)
-  const [phase, setPhase] = useState<'idle' | 'exiting' | 'entering'>('idle')
-  const prefersReducedMotion = usePrefersReducedMotion()
+function useMeasuredHeight<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null)
+  const [height, setHeight] = useState(0)
 
   useEffect(() => {
-    const ROTATE_MS = 4200
-    const EXIT_MS = 450
+    const node = ref.current
+    if (!node) return
 
-    let cancelled = false
-    const timers: ReturnType<typeof setTimeout>[] = []
-    const frames: number[] = []
+    const update = () => setHeight(node.offsetHeight)
+    update()
 
-    const tick = () => {
-      const holdTimer = setTimeout(() => {
-        if (cancelled) return
-
-        if (prefersReducedMotion) {
-          setIndex((prev) => (prev + 1) % length)
-          tick()
-          return
-        }
-
-        setPhase('exiting')
-
-        const exitTimer = setTimeout(() => {
-          if (cancelled) return
-
-          setIndex((prev) => (prev + 1) % length)
-          setPhase('entering')
-
-          const frame1 = requestAnimationFrame(() => {
-            const frame2 = requestAnimationFrame(() => {
-              if (!cancelled) setPhase('idle')
-            })
-            frames.push(frame2)
-          })
-          frames.push(frame1)
-
-          tick()
-        }, EXIT_MS)
-        timers.push(exitTimer)
-      }, ROTATE_MS)
-      timers.push(holdTimer)
-    }
-
-    tick()
+    const observer = new ResizeObserver(update)
+    observer.observe(node)
+    window.addEventListener('resize', update)
 
     return () => {
-      cancelled = true
-      timers.forEach(clearTimeout)
-      frames.forEach(cancelAnimationFrame)
+      observer.disconnect()
+      window.removeEventListener('resize', update)
     }
-  }, [length, prefersReducedMotion])
+  }, [])
 
-  return { index, phase }
+  return { ref, height }
 }
 
-/**
- * Typewriter hook — types the full paragraph once, from first character
- * to last, driven by requestAnimationFrame against a fixed duration
- * (rather than a per-character delay), so it reliably finishes within
- * `durationMs` regardless of paragraph length. Does not loop or reset.
- * Starts only when `start` becomes true (e.g. on scroll reveal), and
- * completes instantly for reduced-motion users.
- */
-function useTypewriterOnce(
-  text: string,
-  options?: { start?: boolean; durationMs?: number },
-) {
-  const { start = true, durationMs = 7000 } = options ?? {}
-  const prefersReducedMotion = usePrefersReducedMotion()
-
-  const [displayedText, setDisplayedText] = useState('')
-  const [isComplete, setIsComplete] = useState(false)
-  const startTimeRef = useRef<number | null>(null)
-  const rafIdRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    if (!start) return
-
-    if (prefersReducedMotion) {
-      setDisplayedText(text)
-      setIsComplete(true)
-      return
-    }
-
-    const tick = (timestamp: number) => {
-      if (startTimeRef.current === null) {
-        startTimeRef.current = timestamp
-      }
-
-      const elapsed = timestamp - startTimeRef.current
-      const progress = Math.min(elapsed / durationMs, 1)
-      setDisplayedText(text.slice(0, Math.round(progress * text.length)))
-
-      if (progress < 1) {
-        rafIdRef.current = requestAnimationFrame(tick)
-      } else {
-        setIsComplete(true)
-      }
-    }
-
-    rafIdRef.current = requestAnimationFrame(tick)
-
-    return () => {
-      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current)
-    }
-  }, [start, text, durationMs, prefersReducedMotion])
-
-  return { displayedText, isComplete, prefersReducedMotion }
+const TIMING = {
+  introDisplayMs: 1500,
+  introFadeOutMs: 600,
+  photoEnterMs: 800,
+  panelFadeMs: 700,
+  panelDelayMs: 150,
+  focusSlideMs: 750,
 }
+
+type Phase = 'idle' | 'intro' | 'intro-fading' | 'settled'
+type FocusView = 'intro' | 'building'
+
+const PANEL_HEIGHT_CLASSES = 'h-[440px] sm:h-[480px] lg:h-[520px]'
 
 function About() {
   const header = useReveal<HTMLDivElement>()
-  const photo = useReveal<HTMLDivElement>()
-  const intro = useReveal<HTMLDivElement>()
-  const approach = useReveal<HTMLDivElement>()
+  const content = useReveal<HTMLDivElement>()
 
-  const { index: capabilityIndex, phase: capabilityPhase } =
-    useRotatingCapability(capabilities.length)
-  const ActiveIcon = capabilities[capabilityIndex].icon
+  const prefersReducedMotion = usePrefersReducedMotion()
 
-  const { displayedText, isComplete, prefersReducedMotion } = useTypewriterOnce(
-    introText,
-    { start: intro.isVisible, durationMs: 7000 },
+  const sectionRef = useRef<HTMLElement | null>(null)
+  const sectionContentRef = useRef<HTMLDivElement | null>(null)
+  const photoRef = useRef<HTMLDivElement | null>(null)
+
+  const [phase, setPhase] = useState<Phase>('idle')
+  const [centerOffsetPx, setCenterOffsetPx] = useState(0)
+  const hasStartedRef = useRef(false)
+
+  const [focusView, setFocusView] = useState<FocusView>('intro')
+  const [pillarsVisible, setPillarsVisible] = useState<boolean[]>(() =>
+    pillars.map(() => false),
   )
+  const [hoveredPillar, setHoveredPillar] = useState<number | null>(null)
+
+  const phaseRef = useRef<Phase>(phase)
+  const focusViewRef = useRef<FocusView>(focusView)
+
+  useEffect(() => {
+    phaseRef.current = phase
+  }, [phase])
+  useEffect(() => {
+    focusViewRef.current = focusView
+  }, [focusView])
+
+  useEffect(() => {
+    const node = sectionRef.current
+    if (!node) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setFocusView('intro')
+        }
+      },
+      { threshold: 0.1 },
+    )
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  const pillarRevealTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
+
+  const clearPillarRevealTimers = useCallback(() => {
+    pillarRevealTimersRef.current.forEach(clearTimeout)
+    pillarRevealTimersRef.current = []
+  }, [])
+
+  const playPillarReveal = useCallback(() => {
+    clearPillarRevealTimers()
+
+    if (prefersReducedMotion) {
+      setPillarsVisible(pillars.map(() => true))
+      return
+    }
+
+    setPillarsVisible(pillars.map(() => false))
+
+    pillars.forEach((_, index) => {
+      const timer = setTimeout(
+        () => {
+          setPillarsVisible((prev) => {
+            const next = [...prev]
+            next[index] = true
+            return next
+          })
+        },
+        index === 0 ? 40 : 40 + index * 300,
+      )
+      pillarRevealTimersRef.current.push(timer)
+    })
+  }, [clearPillarRevealTimers, prefersReducedMotion])
+
+  useEffect(() => {
+    if (focusView === 'building') {
+      playPillarReveal()
+    } else {
+      clearPillarRevealTimers()
+      setPillarsVisible(pillars.map(() => false))
+    }
+
+    return clearPillarRevealTimers
+  }, [focusView, playPillarReveal, clearPillarRevealTimers])
+
+  const isTransitionLockedRef = useRef(false)
+  const transitionLockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  )
+
+  const lockTransition = useCallback(() => {
+    isTransitionLockedRef.current = true
+    if (transitionLockTimerRef.current) {
+      clearTimeout(transitionLockTimerRef.current)
+    }
+    transitionLockTimerRef.current = setTimeout(() => {
+      isTransitionLockedRef.current = false
+    }, TIMING.focusSlideMs)
+  }, [])
+
+  const goToFocusView = useCallback(
+    (next: FocusView) => {
+      if (
+        phaseRef.current !== 'settled' ||
+        isTransitionLockedRef.current ||
+        focusViewRef.current === next
+      ) {
+        return
+      }
+
+      lockTransition()
+      setFocusView(next)
+    },
+    [lockTransition],
+  )
+
+  useEffect(() => {
+    return () => {
+      if (transitionLockTimerRef.current) {
+        clearTimeout(transitionLockTimerRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    const node = sectionContentRef.current
+    if (!node) return
+
+    const WHEEL_THRESHOLD = 2
+
+    const handleWheel = (event: WheelEvent) => {
+      if (phaseRef.current !== 'settled') return
+
+      if (isTransitionLockedRef.current) {
+        event.preventDefault()
+        return
+      }
+
+      const goingDown = event.deltaY > WHEEL_THRESHOLD
+      const goingUp = event.deltaY < -WHEEL_THRESHOLD
+
+      if (goingDown && focusViewRef.current === 'intro') {
+        event.preventDefault()
+        goToFocusView('building')
+      } else if (goingUp && focusViewRef.current === 'building') {
+        event.preventDefault()
+        goToFocusView('intro')
+      }
+    }
+
+    node.addEventListener('wheel', handleWheel, { passive: false })
+    return () => node.removeEventListener('wheel', handleWheel)
+  }, [goToFocusView])
+
+  const { ref: introRef, height: introHeightPx } =
+    useMeasuredHeight<HTMLDivElement>()
+
+  useLayoutEffect(() => {
+    const sectionEl = sectionContentRef.current
+    const photoEl = photoRef.current
+    if (!sectionEl || !photoEl) return
+
+    const sectionRect = sectionEl.getBoundingClientRect()
+    const photoRect = photoEl.getBoundingClientRect()
+    const sectionCenterX = sectionRect.left + sectionRect.width / 2
+    const photoCenterX = photoRect.left + photoRect.width / 2
+
+    setCenterOffsetPx(sectionCenterX - photoCenterX)
+  }, [])
+
+  useEffect(() => {
+    if (!content.isVisible || hasStartedRef.current) return
+    hasStartedRef.current = true
+
+    if (prefersReducedMotion) {
+      setPhase('settled')
+      return
+    }
+
+    setPhase('intro')
+
+    const introTimer = setTimeout(() => {
+      setPhase('intro-fading')
+
+      const fadeOutTimer = setTimeout(() => {
+        setPhase('settled')
+      }, TIMING.introFadeOutMs)
+
+      return () => clearTimeout(fadeOutTimer)
+    }, TIMING.introDisplayMs)
+
+    return () => clearTimeout(introTimer)
+  }, [content.isVisible, prefersReducedMotion])
 
   return (
     <section
       id="about"
-      className="relative overflow-hidden border-t border-white/10 bg-neutral-950 px-6 py-20 sm:py-24 lg:px-8 lg:py-32"
+      ref={sectionRef}
+      className="relative overflow-hidden border-t border-white/10 bg-neutral-950 px-6 pt-16 pb-12 sm:pt-20 sm:pb-16 lg:px-8 lg:pt-24 lg:pb-20"
     >
-      {/* Background Decoration — a diamond near the photo, a large
-          hollow circle up in the text column, and a burnt-orange ring
-          behind the portrait, echoing the reference composition */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 overflow-hidden"
@@ -260,245 +355,302 @@ function About() {
         <div className="absolute -left-10 bottom-[6%] h-64 w-64 rounded-full border border-[#C2542C]/60 shadow-[0_0_50px_rgba(194,84,44,0.12)] sm:h-80 sm:w-80 sm:bottom-[8%]" />
       </div>
 
-      <div className="relative mx-auto max-w-7xl">
-
-        {/* Section Header — label stacked above the heading, both
-            centered as a pair so the section reads with one clear,
-            top-level title regardless of how the columns below align */}
-        <div
-          ref={header.ref}
-          className={`mx-auto max-w-3xl text-center transition-all duration-700 ease-out ${
-            header.isVisible
-              ? 'translate-y-0 opacity-100'
-              : 'translate-y-4 opacity-0'
-          }`}
-        >
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-neutral-500">
-            About Me
-          </p>
-
-          <h2 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:mt-6 sm:text-4xl lg:text-5xl">
-            Beyond the code
-            <span className="text-[#C2542C]">.</span>
-          </h2>
-
-          <div className="mx-auto mt-5 flex items-center justify-center gap-2 sm:mt-6">
-            <span className="h-px w-10 bg-[#C2542C]/50" />
-            <span className="h-1.5 w-1.5 rounded-full bg-[#C2542C]" />
-          </div>
-        </div>
-
-        {/* Photo + Content — the grid aligns to items-start so the photo's
-            top edge lands level with the first line of the intro paragraph
-            (now the first element in the text column), rather than with
-            the section title above, keeping the two columns visually
-            balanced on the same horizontal line */}
-        <div className="mt-14 grid items-start gap-14 sm:mt-16 lg:mt-20 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
-
-          {/* Photo — simple single frame, no offset shadow card or
-              caption underneath, matching the reference's cleaner look */}
+      <div ref={sectionContentRef} className="relative mx-auto max-w-7xl">
+        {(phase === 'intro' || phase === 'intro-fading') && (
           <div
-            ref={photo.ref}
-            className={`relative mx-auto w-full max-w-sm transition-all duration-700 ease-out lg:ml-[10%] ${
-              photo.isVisible
-                ? 'translate-y-0 opacity-100'
-                : 'translate-y-6 opacity-0'
+            className={`absolute inset-0 z-50 flex items-center justify-center transition-opacity duration-600 ease-in-out ${
+              phase === 'intro-fading' ? 'opacity-0' : 'opacity-100'
             }`}
           >
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] bg-white/[0.03] blur-3xl"
-            />
+            <div className="relative text-center px-4">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -inset-10 rounded-full bg-gradient-to-r from-[#C2542C]/30 via-white/10 to-[#C2542C]/30 opacity-75 blur-3xl"
+              />
+              <h2 className="relative text-4xl font-bold tracking-tight text-white drop-shadow-[0_0_35px_rgba(194,84,44,0.85)] sm:text-6xl lg:text-7xl">
+                Beyond the code
+                <span className="text-[#C2542C] drop-shadow-[0_0_20px_rgba(194,84,44,1)]">.</span>
+              </h2>
+            </div>
+          </div>
+        )}
 
-            {/* Portrait + Working Across — a single merged frame: the
-                photo on top, the capability card stacked directly below
-                it with no gap, sharing one rounded border/shadow so the
-                two read as one cohesive card rather than two overlapping
-                elements. */}
-            <div className="group relative z-10 overflow-hidden rounded-3xl border border-white/10 bg-neutral-900 shadow-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_25px_60px_rgba(255,255,255,0.06)]">
-              <div className="relative aspect-[6/7] overflow-hidden">
-                <img
-                  src={jeffreyAbout}
-                  alt="Jeffrey R. Revilla"
-                  className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
-                />
-              </div>
+        <div
+          className={`transition-opacity duration-700 ease-out ${
+            phase === 'idle' || phase === 'intro' || phase === 'intro-fading'
+              ? 'opacity-0'
+              : 'opacity-100'
+          }`}
+        >
+          <div
+            ref={header.ref}
+            className={`mx-auto max-w-3xl text-center transition-all duration-700 ease-out ${
+              header.isVisible
+                ? 'translate-y-0 opacity-100'
+                : 'translate-y-4 opacity-0'
+            }`}
+          >
+            <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl lg:text-4xl">
+              Who I Am
+            </h2>
 
-              {/* Working Across — capability card fused to the bottom of
-                  the frame, cycling through the developer's areas of work
-                  like a small, live status readout. */}
-              <div className="bg-white px-5 pb-2.5 pt-4 sm:px-6 sm:pb-3 sm:pt-5">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C2542C]/60" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#C2542C]" />
-                  </span>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                    Working Across
-                  </p>
-                </div>
-
-                {/* Fixed-height crossfade stage — reserves space for the
-                    tallest label so the card never jumps size between
-                    categories, and clips the outgoing/incoming content as
-                    it animates through. */}
-                <div className="relative mt-2.5 h-8 overflow-hidden sm:h-9">
-                  <div
-                    className={`absolute inset-0 flex items-center gap-2.5 ${
-                      capabilityPhase === 'exiting'
-                        ? '-translate-y-2 opacity-0 transition-all duration-500 ease-out'
-                        : capabilityPhase === 'entering'
-                          ? 'translate-y-2 opacity-0 transition-none'
-                          : 'translate-y-0 opacity-100 transition-all duration-500 ease-out'
-                    }`}
-                  >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-neutral-900 sm:h-8 sm:w-8">
-                      <ActiveIcon className="h-3.5 w-3.5" strokeWidth={1.75} />
-                    </span>
-                    <p className="truncate text-sm font-semibold tracking-tight text-neutral-900 sm:text-base">
-                      {capabilities[capabilityIndex].label}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    {capabilities.map((capability, i) => (
-                      <span
-                        key={capability.label}
-                        className={`h-1 rounded-full transition-all duration-500 ease-out ${
-                          i === capabilityIndex
-                            ? 'w-6 bg-[#C2542C]'
-                            : 'w-1.5 bg-neutral-200'
-                        }`}
-                      />
-                    ))}
-                  </div>
-
-                  <p className="text-[11px] font-medium tabular-nums text-neutral-400">
-                    {String(capabilityIndex + 1).padStart(2, '0')}/
-                    {String(capabilities.length).padStart(2, '0')}
-                  </p>
-                </div>
-              </div>
+            <div className="mx-auto mt-5 flex items-center justify-center gap-2 sm:mt-6">
+              <span className="h-px w-10 bg-[#C2542C]/50" />
+              <span className="h-1.5 w-1.5 rounded-full bg-[#C2542C]" />
             </div>
           </div>
 
-          {/* Text column — starts directly with the intro paragraph so
-              its first line sits level with the photo's top edge, then
-              flows into the pillar row below. Carries the same 10%
-              margin on its right as the photo carries on its left, so
-              both columns sit inset from their outer edges by an equal
-              amount for a balanced, symmetrical composition. */}
-          <div className="flex flex-col lg:mr-[10%]">
-
-            {/* Intro Text */}
+          <div
+            ref={content.ref}
+            className="mt-12 grid items-start gap-12 sm:mt-14 lg:mt-16 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16"
+          >
+            {/* Photo Column */}
             <div
-              ref={intro.ref}
-              className={`transition-all duration-700 ease-out ${
-                intro.isVisible
-                  ? 'translate-y-0 opacity-100'
-                  : 'translate-y-6 opacity-0'
-              }`}
+              ref={photoRef}
+              className="relative z-10 mx-auto w-full max-w-sm lg:ml-[10%]"
+              style={
+                prefersReducedMotion
+                  ? undefined
+                  : phase === 'settled'
+                    ? {
+                        opacity: 1,
+                        transform: 'translateX(0) scale(1)',
+                        transitionProperty: 'opacity, transform',
+                        transitionDuration: `${TIMING.photoEnterMs}ms`,
+                        transitionTimingFunction: 'ease-out',
+                      }
+                    : {
+                        opacity: 0,
+                        transform: `translateX(${centerOffsetPx}px) scale(1)`,
+                      }
+              }
             >
-              {/* Relative wrapper: an invisible "sizer" paragraph reserves
-                  the final height up front, so the paragraph typing in
-                  doesn't shift the pillars below as it grows. */}
-              <div className="relative max-w-2xl">
-                <p aria-hidden="true" className="invisible text-justify text-lg leading-8">
-                  {introText}
-                </p>
-
-                <p
+              <div className="origin-top-right scale-90">
+                <div
                   aria-hidden="true"
-                  className="absolute inset-0 text-justify text-lg font-light leading-8 text-neutral-300"
-                >
-                  {displayedText}
-                  {!isComplete && !prefersReducedMotion && (
-                    <span className="ml-0.5 inline-block h-[1em] w-[2px] translate-y-[0.15em] animate-pulse bg-white/60 align-middle" />
-                  )}
-                </p>
-              </div>
+                  className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] bg-white/[0.03] blur-3xl"
+                />
 
-              {/* Static, always-present text for screen readers */}
-              <p className="sr-only">{introText}</p>
-            </div>
+                <div className="group relative z-10 overflow-hidden rounded-3xl border border-white/10 bg-neutral-900 shadow-2xl transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_25px_60px_rgba(255,255,255,0.06)]">
+                  <div className="relative aspect-[6/7] overflow-hidden">
+                    <img
+                      src={jeffreyAbout}
+                      alt="Jeffrey R. Revilla"
+                      className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
+                    />
 
-            {/* Building with Purpose */}
-            <div
-              ref={approach.ref}
-              className={`mt-12 transition-all duration-700 ease-out ${
-                approach.isVisible
-                  ? 'translate-y-0 opacity-100'
-                  : 'translate-y-6 opacity-0'
-              }`}
-            >
-              <h3 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                Building with purpose.
-              </h3>
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
-              <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-500">
-                These are the principles that guide how I think, build, and
-                deliver solutions.
-              </p>
-
-              <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-3">
-                {pillars.map((pillar, index) => {
-                  const Icon = pillar.icon
-                  return (
-                    <div
-                      key={pillar.number}
-                      className={`group rounded-2xl border border-white/10 bg-neutral-900/40 p-6 backdrop-blur-sm transition-[transform,border-color,background-color,box-shadow] duration-500 ease-out hover:-translate-y-1 hover:border-white/20 hover:bg-neutral-900/60 hover:shadow-[0_20px_45px_rgba(0,0,0,0.35)] ${
-                        approach.isVisible
-                          ? 'translate-y-0 opacity-100'
-                          : 'translate-y-6 opacity-0'
-                      }`}
-                      style={{
-                        transitionDelay: approach.isVisible ? `${index * 120}ms` : '0ms',
-                      }}
-                    >
+                    <div className="absolute inset-x-0 bottom-0 px-5 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-5">
                       <div className="flex items-center gap-2">
-                        <Icon
-                          className="h-5 w-5 text-[#C2542C]"
-                          strokeWidth={1.75}
-                          aria-hidden="true"
-                        />
-                        <span className="text-sm font-medium tabular-nums text-[#C2542C]">
-                          {pillar.number}
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C2542C]/60" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#C2542C]" />
                         </span>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
+                          Connect With Me
+                        </p>
                       </div>
 
-                      <h4 className="mt-4 text-lg font-semibold text-white">
-                        {pillar.label}
-                      </h4>
-
-                      {/* Hover affordance — visible in the resting state,
-                          fades out as the description takes its place so
-                          the card always signals it's interactive without
-                          needing to be discovered by accident. */}
-                      <div className="mt-3 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500 transition-opacity duration-300 ease-out group-hover:opacity-0">
-                        <span>Hover to explore</span>
-                        <ArrowRight
-                          className="h-3 w-3 transition-transform duration-300 ease-out group-hover:translate-x-0.5"
-                          strokeWidth={2}
-                          aria-hidden="true"
-                        />
-                      </div>
-
-                      {/* Description — animated with a grid-template-rows
-                          fr trick (0fr -> 1fr) rather than max-height, so
-                          it eases to its exact intrinsic height with no
-                          snapping or shake, regardless of text length. */}
-                      <div className="grid grid-rows-[0fr] transition-[grid-template-rows] duration-500 ease-out group-hover:grid-rows-[1fr]">
-                        <div className="overflow-hidden">
-                          <p className="pt-2 text-sm leading-6 text-neutral-400">
-                            {pillar.description}
-                          </p>
-                        </div>
+                      {/* Social Icons Row */}
+                      <div className="mt-3 flex items-center gap-3">
+                        {socialLinks.map((social) => {
+                          const Icon = social.icon
+                          return (
+                            <a
+                              key={social.label}
+                              href={social.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={social.label}
+                              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-neutral-800/80 text-white transition-all duration-300 hover:scale-110 hover:border-[#C2542C] hover:bg-[#C2542C]"
+                            >
+                              <Icon className="h-4 w-4" />
+                            </a>
+                          )
+                        })}
                       </div>
                     </div>
-                  )
-                })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Text Column */}
+            <div
+              className="flex flex-col lg:mr-[10%]"
+              style={
+                prefersReducedMotion
+                  ? undefined
+                  : {
+                      opacity: phase === 'settled' ? 1 : 0,
+                      transitionProperty: 'opacity',
+                      transitionDuration: `${TIMING.panelFadeMs}ms`,
+                      transitionDelay: `${TIMING.panelDelayMs}ms`,
+                      transitionTimingFunction: 'ease-out',
+                    }
+              }
+            >
+              <div className={`relative overflow-hidden ${PANEL_HEIGHT_CLASSES}`}>
+                <div
+                  className="transition-transform duration-700 ease-in-out"
+                  style={{
+                    transform:
+                      focusView === 'building'
+                        ? `translateY(-${introHeightPx}px)`
+                        : 'translateY(0px)',
+                  }}
+                >
+                  {/* Intro Panel */}
+                  <div
+                    ref={introRef}
+                    className="pb-6 sm:pb-8"
+                    aria-hidden={focusView !== 'intro'}
+                  >
+                    <h3 className="text-2xl font-semibold uppercase tracking-[0.2em] text-white sm:text-3xl lg:text-4xl">
+                      I&apos;m Jeffrey
+                    </h3>
+
+                    <p className="mt-4 max-w-2xl text-justify text-base font-light leading-7 text-neutral-400 sm:mt-5 sm:text-lg lg:text-xl">
+                      {introText}
+                    </p>
+                  </div>
+
+                  {/* Building with Purpose Panel */}
+                  <div
+                    className={`flex flex-col ${PANEL_HEIGHT_CLASSES} transition-opacity duration-700 ease-out ${
+                      focusView === 'building' ? 'opacity-100' : 'opacity-40'
+                    }`}
+                    aria-hidden={focusView !== 'building'}
+                  >
+                    <h3 className="shrink-0 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                      Building with purpose.
+                    </h3>
+
+                    <p className="mt-2 max-w-xl shrink-0 text-sm leading-6 text-neutral-500">
+                      These are the principles that guide how I think, build,
+                      and deliver solutions.
+                    </p>
+
+                    <div className="relative mt-6 min-h-0 flex-1 overflow-visible">
+                      <div
+                        className="flex h-full w-full items-start gap-3 sm:gap-4 lg:gap-5"
+                        onMouseLeave={() => setHoveredPillar(null)}
+                      >
+                        {pillars.map((pillar, index) => {
+                          const Icon = pillar.icon
+                          const isRevealed = pillarsVisible[index]
+                          const isHovered = isRevealed && hoveredPillar === index
+                          const isDimmed =
+                            isRevealed &&
+                            hoveredPillar !== null &&
+                            hoveredPillar !== index
+
+                          const scale = isHovered ? 1.06 : isDimmed ? 0.97 : 1
+                          const translateY = isRevealed ? 0 : 28
+                          const transform = `translateY(${translateY}px) scale(${scale})`
+
+                          const zIndex = isHovered ? 50 : 10
+
+                          return (
+                            <div
+                              key={pillar.number}
+                              aria-hidden={!isRevealed}
+                              onMouseEnter={() =>
+                                isRevealed && setHoveredPillar(index)
+                              }
+                              className={`group relative flex h-auto min-h-[320px] w-full flex-1 max-w-[200px] sm:max-w-[220px] lg:max-w-[240px] flex-col justify-between rounded-2xl border p-5 backdrop-blur-md ${
+                                !isRevealed ? 'pointer-events-none' : ''
+                              } ${
+                                isHovered
+                                  ? 'border-white/30 bg-neutral-900/95 shadow-[0_25px_60px_-12px_rgba(194,84,44,0.55)]'
+                                  : 'border-white/10 bg-neutral-950/95 shadow-[0_0_35px_-8px_rgba(194,84,44,0.3)]'
+                              }`}
+                              style={{
+                                transform,
+                                transformOrigin: 'top center',
+                                opacity: isRevealed ? (isDimmed ? 0.55 : 1) : 0,
+                                filter: isDimmed ? 'blur(3px)' : 'blur(0px)',
+                                zIndex,
+                                ...(prefersReducedMotion
+                                  ? null
+                                  : {
+                                      transitionProperty:
+                                        'transform, opacity, filter, background-color, border-color, box-shadow, height',
+                                      transitionDuration:
+                                        hoveredPillar !== null
+                                          ? '400ms'
+                                          : `${TIMING.focusSlideMs}ms`,
+                                      transitionTimingFunction:
+                                        'cubic-bezier(0.25, 1, 0.5, 1)',
+                                    }),
+                              }}
+                            >
+                              <div
+                                aria-hidden="true"
+                                className={`pointer-events-none absolute -inset-3 -z-10 rounded-[1.75rem] bg-[#C2542C]/10 blur-2xl transition-opacity duration-500 ${
+                                  isHovered ? 'opacity-100' : 'opacity-0'
+                                }`}
+                              />
+
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <Icon
+                                    className="h-5 w-5 text-[#C2542C]"
+                                    strokeWidth={1.75}
+                                    aria-hidden="true"
+                                  />
+                                  <span className="text-sm font-medium tabular-nums text-[#C2542C]">
+                                    {pillar.number}
+                                  </span>
+                                </div>
+
+                                <h4 className="mt-3 text-base font-semibold text-white sm:text-lg">
+                                  {pillar.label}
+                                </h4>
+
+                                <p className="mt-1 text-xs font-medium leading-5 text-[#C2542C] sm:text-sm">
+                                  {pillar.tagline}
+                                </p>
+
+                                <p
+                                  className={`mt-2 text-xs leading-5 text-neutral-400 transition-all duration-300 sm:text-sm sm:leading-6 ${
+                                    isHovered ? '' : 'line-clamp-5'
+                                  }`}
+                                >
+                                  {pillar.description}
+                                </p>
+                              </div>
+
+                              <div className="mt-2 flex items-center gap-1">
+                                <span className="h-1 w-4 rounded-full bg-[#C2542C]" />
+                                <span className="h-1 w-1 rounded-full bg-white/20" />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      <div className="pointer-events-none absolute inset-x-0 bottom-2 z-40 flex items-center justify-center gap-1.5">
+                        {pillars.map((pillar, i) => (
+                          <span
+                            key={pillar.number}
+                            className={`h-1 rounded-full transition-all duration-500 ease-out ${
+                              pillarsVisible[i]
+                                ? 'w-6 bg-[#C2542C]'
+                                : 'w-1.5 bg-neutral-200/20'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-neutral-950 to-transparent sm:h-20"
+                />
               </div>
             </div>
           </div>
