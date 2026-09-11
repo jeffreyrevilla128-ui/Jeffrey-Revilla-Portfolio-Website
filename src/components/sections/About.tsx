@@ -21,7 +21,15 @@ const LinkedinIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const socialLinks = [
   { label: 'Facebook', icon: FacebookIcon, href: 'https://www.facebook.com/jeffrey.romerosa.9' },
-  { label: 'Gmail', icon: Mail, href: 'mailto:jeffreyrevilla128@gmail.com' },
+  {
+    label: 'Gmail',
+    icon: Mail,
+    href: `https://mail.google.com/mail/?view=cm&fs=1&to=jeffreyrevilla128@gmail.com&su=${encodeURIComponent(
+      "Let's connect",
+    )}&body=${encodeURIComponent(
+      'Hi Jeffrey,\n\nI came across your portfolio and would like to get in touch.\n\n',
+    )}`,
+  },
   { label: 'LinkedIn', icon: LinkedinIcon, href: 'https://www.linkedin.com/in/jeffrey-revilla-9ab321417/' },
 ]
 
@@ -62,6 +70,15 @@ const introText = [
   "something that holds up, stays easy to maintain, and genuinely makes",
   "someone's work easier.",
 ].join(' ')
+
+/* Small set of slow-drifting decorative nodes for the ambient background. */
+const ambientNodes = [
+  { top: '14%', left: '10%', size: 5, duration: 16, delay: 0 },
+  { top: '72%', left: '18%', size: 3, duration: 20, delay: 2 },
+  { top: '22%', left: '82%', size: 4, duration: 18, delay: 1 },
+  { top: '64%', left: '90%', size: 3, duration: 22, delay: 3 },
+  { top: '46%', left: '48%', size: 3, duration: 24, delay: 4 },
+]
 
 /* ------------------------------------------------------------------ */
 /*  Reveal-on-scroll: fires once when the element enters the viewport, */
@@ -112,7 +129,6 @@ function usePrefersReducedMotion() {
 function About() {
   const header = useReveal<HTMLDivElement>()
   const photo = useReveal<HTMLDivElement>()
-  const intro = useReveal<HTMLDivElement>()
   const pillarsBlock = useReveal<HTMLDivElement>()
 
   const prefersReducedMotion = usePrefersReducedMotion()
@@ -122,114 +138,225 @@ function About() {
       id="about"
       className="relative overflow-hidden border-t border-neutral-200 bg-white px-6 pt-16 pb-12 sm:pt-20 sm:pb-16 lg:px-8 lg:pt-24 lg:pb-20"
     >
-      {/* Background Decoration */}
+      {/*
+        Ambient background motion — kept purely decorative and behind the
+        content (z-0, pointer-events-none). Everything here is very low
+        opacity so the section still reads as white and minimalist; motion
+        is slow (16–30s per cycle) so it registers as "alive" rather than
+        "animated". All animation is skipped when the user prefers reduced
+        motion, in which case the shapes render static.
+      */}
+      <style>{`
+        @keyframes about-drift-a {
+          0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.05; }
+          50% { transform: translate3d(18px, -22px, 0) scale(1.06); opacity: 0.09; }
+        }
+        @keyframes about-drift-b {
+          0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.04; }
+          50% { transform: translate3d(-16px, 20px, 0) scale(1.05); opacity: 0.08; }
+        }
+        @keyframes about-drift-c {
+          0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.05; }
+          50% { transform: translate3d(14px, 16px, 0) scale(1.04); opacity: 0.1; }
+        }
+        @keyframes about-line-sway {
+          0%, 100% { transform: rotate(0deg); opacity: 0.06; }
+          50% { transform: rotate(1.5deg); opacity: 0.14; }
+        }
+        @keyframes about-node-float {
+          0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.15; }
+          50% { transform: translate3d(0, -14px, 0); opacity: 0.4; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .about-ambient-motion { animation: none !important; }
+        }
+      `}</style>
+
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 overflow-hidden"
+        className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
       >
+        {/* Original static decorative shapes, kept as-is */}
         <div className="absolute left-[6%] top-[18%] h-16 w-16 rotate-45 rounded-2xl border border-black/[0.06] sm:h-24 sm:w-24" />
         <div className="absolute right-[4%] top-[4%] h-40 w-40 rounded-full border border-black/[0.06] sm:h-56 sm:w-56" />
         <div className="absolute -left-10 bottom-[6%] h-64 w-64 rounded-full border border-[#C2542C]/60 shadow-[0_0_50px_rgba(194,84,44,0.12)] sm:h-80 sm:w-80 sm:bottom-[8%]" />
+
+        {/* Slow-drifting ambient glows, accent-colored, very low opacity */}
+        <div
+          className="about-ambient-motion absolute -top-24 left-[20%] h-72 w-72 rounded-full bg-[#C2542C] blur-3xl sm:h-96 sm:w-96"
+          style={{
+            opacity: 0.05,
+            animation: prefersReducedMotion ? 'none' : 'about-drift-a 22s ease-in-out infinite',
+          }}
+        />
+        <div
+          className="about-ambient-motion absolute bottom-[-10%] right-[8%] h-80 w-80 rounded-full bg-[#C2542C] blur-3xl sm:h-[26rem] sm:w-[26rem]"
+          style={{
+            opacity: 0.04,
+            animation: prefersReducedMotion ? 'none' : 'about-drift-b 28s ease-in-out infinite',
+          }}
+        />
+        <div
+          className="about-ambient-motion absolute top-[40%] right-[30%] h-48 w-48 rounded-full bg-[#C2542C] blur-2xl"
+          style={{
+            opacity: 0.05,
+            animation: prefersReducedMotion ? 'none' : 'about-drift-c 25s ease-in-out infinite',
+          }}
+        />
+
+        {/* Thin decorative lines that sway almost imperceptibly */}
+        <span
+          className="about-ambient-motion absolute left-[12%] top-[36%] h-px w-24 origin-left bg-[#C2542C] sm:w-32"
+          style={{
+            opacity: 0.08,
+            animation: prefersReducedMotion ? 'none' : 'about-line-sway 14s ease-in-out infinite',
+          }}
+        />
+        <span
+          className="about-ambient-motion absolute right-[16%] bottom-[24%] h-px w-20 origin-right bg-[#C2542C] sm:w-28"
+          style={{
+            opacity: 0.07,
+            animation: prefersReducedMotion ? 'none' : 'about-line-sway 18s ease-in-out infinite reverse',
+          }}
+        />
+        <span
+          className="about-ambient-motion absolute left-[46%] top-[8%] h-20 w-px origin-top bg-[#C2542C] sm:h-28"
+          style={{
+            opacity: 0.06,
+            animation: prefersReducedMotion ? 'none' : 'about-line-sway 20s ease-in-out infinite',
+          }}
+        />
+
+        {/* Small floating nodes */}
+        {ambientNodes.map((node, index) => (
+          <span
+            key={index}
+            className="about-ambient-motion absolute rounded-full bg-[#C2542C]"
+            style={{
+              top: node.top,
+              left: node.left,
+              width: node.size,
+              height: node.size,
+              opacity: 0.15,
+              animation: prefersReducedMotion
+                ? 'none'
+                : `about-node-float ${node.duration}s ease-in-out infinite`,
+              animationDelay: prefersReducedMotion ? undefined : `${node.delay}s`,
+            }}
+          />
+        ))}
       </div>
 
-      <div className="relative mx-auto max-w-7xl">
-        {/* Section Header */}
+      <div className="relative z-10 mx-auto max-w-7xl">
+        {/* Section Header — eyebrow, name, and intro copy, all centered */}
         <div
           ref={header.ref}
           className={`mx-auto max-w-3xl text-center transition-all duration-700 ease-out ${
             header.isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
           }`}
         >
-          <h2 className="text-2xl font-semibold tracking-tight text-neutral-900 sm:text-3xl lg:text-4xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-500">
             Who I Am
-          </h2>
+          </p>
 
-          <div className="mx-auto mt-5 flex items-center justify-center gap-2 sm:mt-6">
+          <div className="mx-auto mt-4 flex items-center justify-center gap-2">
             <span className="h-px w-10 bg-[#C2542C]/50" />
             <span className="h-1.5 w-1.5 rounded-full bg-[#C2542C]" />
           </div>
+
+          <h2 className="mt-5 text-3xl uppercase tracking-[0.15em] text-neutral-900 sm:text-4xl lg:text-5xl">
+            <span className="font-light">I&apos;m</span>{' '}
+            <span className="font-extrabold">Jeffrey</span>
+          </h2>
+
+          <p className="mx-auto mt-6 max-w-2xl text-base font-light leading-7 text-neutral-600 sm:text-lg lg:text-xl">
+            {introText}
+          </p>
         </div>
 
-        <div className="mt-12 grid items-start gap-12 sm:mt-14 lg:mt-16 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
-          {/* Photo Column */}
-          <div
-            ref={photo.ref}
-            className={`relative z-10 mx-auto w-full max-w-sm transition-all duration-700 ease-out lg:ml-[10%] ${
-              photo.isVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
-            }`}
-          >
-            <div className="origin-top-right scale-90">
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] bg-black/[0.03] blur-3xl"
-              />
+        {/* Photo flanked by role/tagline on the left and social links on the right */}
+        <div
+          ref={photo.ref}
+          className={`mt-14 grid grid-cols-1 items-center gap-10 transition-all duration-700 ease-out sm:mt-16 lg:mt-20 lg:grid-cols-[1fr_auto_1fr] lg:gap-12 ${
+            photo.isVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+          }`}
+        >
+          {/* Left: role + tagline */}
+          <div className="text-center lg:text-left">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-900">
+              Full-Stack Developer
+            </p>
+            <span className="mx-auto mt-3 block h-px w-10 bg-[#C2542C] lg:mx-0" />
+            <p className="mx-auto mt-4 max-w-xs text-sm leading-6 text-neutral-500 lg:mx-0">
+              Building practical systems around real-world problems.
+            </p>
+          </div>
 
-              <div className="group relative z-10 overflow-hidden rounded-3xl border border-neutral-200 bg-neutral-900 shadow-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl">
-                <div className="relative aspect-[6/7] overflow-hidden">
-                  <img
-                    src={jeffreyAbout}
-                    alt="Jeffrey R. Revilla"
-                    className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
-                  />
+          {/* Center: photo */}
+          <div className="relative mx-auto w-full max-w-[280px]">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -left-8 -top-8 -z-10 h-56 w-56 rounded-full bg-[#C2542C]/10 blur-3xl"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-3 top-6 -z-10 h-[calc(100%-1.5rem)] w-full rounded-2xl border border-neutral-200"
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-1.5 top-10 h-16 w-1.5 rounded-full bg-[#C2542C]"
+            />
 
-                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-
-                  <div className="absolute inset-x-0 bottom-0 px-5 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-5">
-                    <div className="flex items-center gap-2">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#C2542C]/60" />
-                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#C2542C]" />
-                      </span>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">
-                        Connect With Me
-                      </p>
-                    </div>
-
-                    {/* Social Icons Row */}
-                    <div className="mt-3 flex items-center gap-3">
-                      {socialLinks.map((social) => {
-                        const Icon = social.icon
-                        return (
-                          <a
-                            key={social.label}
-                            href={social.href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={social.label}
-                            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-neutral-800/80 text-white transition-all duration-300 hover:scale-110 hover:border-[#C2542C] hover:bg-[#C2542C]"
-                          >
-                            <Icon className="h-4 w-4" />
-                          </a>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
+            <div className="group relative z-10 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-900 shadow-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl">
+              <div className="aspect-[4/5] overflow-hidden">
+                <img
+                  src={jeffreyAbout}
+                  alt="Jeffrey R. Revilla"
+                  fetchPriority="high"
+                  className="h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
+                />
               </div>
             </div>
           </div>
 
-          {/* Text Column */}
-          <div className="flex flex-col lg:mr-[10%]">
-            {/* Intro */}
-            <div
-              ref={intro.ref}
-              className={`transition-all duration-700 ease-out ${
-                intro.isVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
-              }`}
-            >
-              <h3 className="text-2xl font-semibold uppercase tracking-[0.2em] text-neutral-900 sm:text-3xl lg:text-4xl">
-                I&apos;m Jeffrey
-              </h3>
-
-              <p className="mt-4 max-w-2xl text-left text-base font-light leading-7 text-neutral-600 sm:mt-5 sm:text-lg lg:text-xl">
-                {introText}
+          {/* Right: let's connect */}
+          <div className="flex items-center justify-center gap-6 lg:justify-end">
+            <span
+              aria-hidden="true"
+              className="hidden h-16 w-px bg-neutral-200 lg:block"
+            />
+            <div className="text-center lg:text-left">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-neutral-900">
+                Let&apos;s Connect
               </p>
+
+              <div className="mt-4 flex items-center justify-center gap-5 lg:justify-start">
+                {socialLinks.map((social) => {
+                  const Icon = social.icon
+                  return (
+                    <a
+                      key={social.label}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={social.label}
+                      className="group/social flex flex-col items-center gap-2"
+                    >
+                      <span className="flex h-11 w-11 items-center justify-center rounded-full border border-[#C2542C]/30 bg-neutral-900 text-white transition-all duration-300 group-hover/social:scale-110 group-hover/social:border-[#C2542C] group-hover/social:bg-[#C2542C]">
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      <span className="text-[11px] text-neutral-500">
+                        {social.label}
+                      </span>
+                    </a>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Building With Purpose — full-width, sits below the photo + intro row */}
+        {/* Building With Purpose — full-width, sits below the photo + details row */}
         <div className="mt-12 sm:mt-14 lg:mt-16">
           <div className="mx-auto max-w-2xl text-center">
             <h3 className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl">
