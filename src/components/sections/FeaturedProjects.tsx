@@ -192,11 +192,11 @@ function FeaturedProjects() {
     setBackdropShown(false)
 
     if (isTouch) {
-      // Phone mode: slide the sheet back down and out, rather than
-      // shrinking it toward the origin card — quicker and simpler to
-      // track with a thumb than a scale-based exit.
-      modal.style.transition = 'transform 260ms cubic-bezier(0.4,0,1,1)'
-      modal.style.transform = 'translateY(100%)'
+      // Phone mode: slide the sheet back down and out, with a barely-there
+      // scale-down to echo the entrance. No overshoot on the way out —
+      // just a clean, controlled deceleration.
+      modal.style.transition = 'transform 420ms cubic-bezier(0.4, 0, 0.2, 1)'
+      modal.style.transform = 'translateY(100%) scale(0.99)'
     } else {
       const endRect = modal.getBoundingClientRect()
       const scaleX = originRect!.width / endRect.width
@@ -255,7 +255,7 @@ function FeaturedProjects() {
 
       if (isTouch) {
         modal.style.transition = 'none'
-        modal.style.transform = 'translateY(100%)'
+        modal.style.transform = 'translateY(100%) scale(0.985)'
         modal.style.opacity = '1'
 
         // Force a reflow so the browser registers the starting transform
@@ -265,8 +265,13 @@ function FeaturedProjects() {
         setBackdropShown(true)
 
         raf = requestAnimationFrame(() => {
-          modal.style.transition = 'transform 340ms cubic-bezier(0.22,1,0.36,1)'
-          modal.style.transform = 'translateY(0px)'
+          // A gentle back-ease (tiny overshoot, quickly settled) plus a
+          // near-imperceptible scale pop — enough to feel alive and a
+          // little Dynamic-Island-ish without reading as a cartoonish
+          // bounce. Kept to a measured 560ms so it still feels controlled.
+          modal.style.transition =
+            'transform 560ms cubic-bezier(0.25, 1.1, 0.4, 1)'
+          modal.style.transform = 'translateY(0px) scale(1)'
         })
       } else {
         const endRect = modal.getBoundingClientRect()
