@@ -180,27 +180,37 @@ function FeaturedProjects() {
   const closeModal = () => {
     const modal = modalRef.current
     const originRect = originRectRef.current
+    const isTouch =
+      typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
 
-    if (!modal || !originRect) {
+    if (!modal || (!isTouch && !originRect)) {
       setSelectedProject(null)
       return
     }
 
-    const endRect = modal.getBoundingClientRect()
-    const scaleX = originRect.width / endRect.width
-    const scaleY = originRect.height / endRect.height
-    const translateX =
-      originRect.left + originRect.width / 2 - (endRect.left + endRect.width / 2)
-    const translateY =
-      originRect.top + originRect.height / 2 - (endRect.top + endRect.height / 2)
-
     setModalPhase('exiting')
     setBackdropShown(false)
 
-    modal.style.transition =
-      'transform 320ms cubic-bezier(0.4,0,1,1), opacity 260ms ease-in'
-    modal.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`
-    modal.style.opacity = '0'
+    if (isTouch) {
+      // Phone mode: slide the sheet back down and out, rather than
+      // shrinking it toward the origin card — quicker and simpler to
+      // track with a thumb than a scale-based exit.
+      modal.style.transition = 'transform 260ms cubic-bezier(0.4,0,1,1)'
+      modal.style.transform = 'translateY(100%)'
+    } else {
+      const endRect = modal.getBoundingClientRect()
+      const scaleX = originRect!.width / endRect.width
+      const scaleY = originRect!.height / endRect.height
+      const translateX =
+        originRect!.left + originRect!.width / 2 - (endRect.left + endRect.width / 2)
+      const translateY =
+        originRect!.top + originRect!.height / 2 - (endRect.top + endRect.height / 2)
+
+      modal.style.transition =
+        'transform 320ms cubic-bezier(0.4,0,1,1), opacity 260ms ease-in'
+      modal.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`
+      modal.style.opacity = '0'
+    }
 
     const handleEnd = () => {
       modal.removeEventListener('transitionend', handleEnd)
@@ -210,10 +220,12 @@ function FeaturedProjects() {
     modal.addEventListener('transitionend', handleEnd)
   }
 
-  // Once the modal has mounted at its natural (centered) position, jump it
-  // back to the origin card's position/size with no transition, then release
-  // it on the next frame so the browser animates the transform back to
-  // identity — the "card growing into a modal" effect (a manual FLIP).
+  // On desktop, jump the modal back to the origin card's position/size with
+  // no transition, then release it on the next frame so the browser
+  // animates the transform back to identity — the "card growing into a
+  // modal" effect (a manual FLIP). On phone mode, skip the FLIP entirely
+  // and just slide the sheet up from below the viewport instead, since a
+  // stretch-from-card effect reads as slow and fiddly on a small screen.
   //
   // The hero screenshot has no reserved aspect ratio, so if we measure the
   // modal's box before that image has actually loaded, `endRect` comes out
@@ -225,7 +237,10 @@ function FeaturedProjects() {
     if (!selectedProject || modalPhase !== 'entering') return
     const modal = modalRef.current
     const originRect = originRectRef.current
-    if (!modal || !originRect) {
+    const isTouch =
+      typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches
+
+    if (!modal || (!isTouch && !originRect)) {
       setModalPhase('entered')
       setBackdropShown(true)
       return
@@ -238,30 +253,47 @@ function FeaturedProjects() {
     const runEnterAnimation = () => {
       if (cancelled) return
 
-      const endRect = modal.getBoundingClientRect()
-      const scaleX = originRect.width / endRect.width
-      const scaleY = originRect.height / endRect.height
-      const translateX =
-        originRect.left + originRect.width / 2 - (endRect.left + endRect.width / 2)
-      const translateY =
-        originRect.top + originRect.height / 2 - (endRect.top + endRect.height / 2)
-
-      modal.style.transition = 'none'
-      modal.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`
-      modal.style.opacity = '0.5'
-
-      // Force a reflow so the browser registers the starting transform
-      // before we animate away from it.
-      void modal.offsetHeight
-
-      setBackdropShown(true)
-
-      raf = requestAnimationFrame(() => {
-        modal.style.transition =
-          'transform 420ms cubic-bezier(0.22,1,0.36,1), opacity 320ms ease-out'
-        modal.style.transform = 'translate(0px, 0px) scale(1, 1)'
+      if (isTouch) {
+        modal.style.transition = 'none'
+        modal.style.transform = 'translateY(100%)'
         modal.style.opacity = '1'
-      })
+
+        // Force a reflow so the browser registers the starting transform
+        // before we animate away from it.
+        void modal.offsetHeight
+
+        setBackdropShown(true)
+
+        raf = requestAnimationFrame(() => {
+          modal.style.transition = 'transform 340ms cubic-bezier(0.22,1,0.36,1)'
+          modal.style.transform = 'translateY(0px)'
+        })
+      } else {
+        const endRect = modal.getBoundingClientRect()
+        const scaleX = originRect!.width / endRect.width
+        const scaleY = originRect!.height / endRect.height
+        const translateX =
+          originRect!.left + originRect!.width / 2 - (endRect.left + endRect.width / 2)
+        const translateY =
+          originRect!.top + originRect!.height / 2 - (endRect.top + endRect.height / 2)
+
+        modal.style.transition = 'none'
+        modal.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`
+        modal.style.opacity = '0.5'
+
+        // Force a reflow so the browser registers the starting transform
+        // before we animate away from it.
+        void modal.offsetHeight
+
+        setBackdropShown(true)
+
+        raf = requestAnimationFrame(() => {
+          modal.style.transition =
+            'transform 420ms cubic-bezier(0.22,1,0.36,1), opacity 320ms ease-out'
+          modal.style.transform = 'translate(0px, 0px) scale(1, 1)'
+          modal.style.opacity = '1'
+        })
+      }
 
       handleTransitionEnd = () => {
         modal.removeEventListener('transitionend', handleTransitionEnd!)
@@ -342,6 +374,14 @@ function FeaturedProjects() {
           50%  { transform: translate(-16%, -6%) scale(1.25); }
           100% { transform: translate(10%, 10%) scale(1); }
         }
+        @keyframes projectCardFloat {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-6px); }
+        }
+        @keyframes projectCtaGlow {
+          0%, 100% { text-shadow: 0 0 6px rgba(232,131,78,0.5), 0 0 2px rgba(232,131,78,0.3); }
+          50%      { text-shadow: 0 0 16px rgba(232,131,78,1), 0 0 30px rgba(232,131,78,0.7); }
+        }
       `}</style>
 
       <div className="mx-auto max-w-7xl">
@@ -367,8 +407,8 @@ function FeaturedProjects() {
         </div>
 
         {/* Project List */}
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {featuredProjects.map((project) => {
+        <div className="mt-16 grid gap-12 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+          {featuredProjects.map((project, index) => {
             const isHovered = hoveredId === project.id
             const isDimmed = hoveredId !== null && !isHovered
 
@@ -387,7 +427,8 @@ function FeaturedProjects() {
                 tabIndex={0}
                 role="button"
                 aria-label={`View full details for ${project.title}`}
-                className={`group relative cursor-pointer rounded-2xl bg-white p-3 shadow-[0_20px_45px_-8px_rgba(23,23,23,0.32)] transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C2542C] ${
+                style={{ animationDelay: `${(index % 3) * 0.65}s` }}
+                className={`group relative cursor-pointer rounded-2xl bg-white p-3 shadow-[0_20px_45px_-8px_rgba(23,23,23,0.32)] transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C2542C] [@media(hover:none)]:shadow-[0_30px_45px_-14px_rgba(0,0,0,0.55),0_14px_24px_-10px_rgba(0,0,0,0.4)] [@media(hover:none)]:[animation:projectCardFloat_5.5s_ease-in-out_infinite] ${
                   isHovered
                     ? 'z-10 -translate-y-1 scale-105 shadow-[0_35px_65px_-12px_rgba(194,84,44,0.55),0_0_40px_rgba(194,84,44,0.35)]'
                     : ''
@@ -409,7 +450,7 @@ function FeaturedProjects() {
                       on hover, revealing the project title and a prompt to
                       view full details. Hidden and non-interactive when idle. */}
                   <div
-                    className={`absolute inset-0 flex flex-col items-center justify-center gap-2 overflow-hidden px-5 text-center backdrop-blur-sm transition-all duration-300 ease-out ${
+                    className={`absolute inset-0 hidden flex-col items-center justify-center gap-2 overflow-hidden px-5 text-center backdrop-blur-sm transition-all duration-300 ease-out [@media(hover:hover)]:flex ${
                       isHovered
                         ? 'bg-black/60 opacity-100'
                         : 'pointer-events-none bg-black/0 opacity-0'
@@ -457,6 +498,58 @@ function FeaturedProjects() {
                       className={`relative z-10 text-[11px] font-medium uppercase tracking-[0.15em] text-[#E8834E] transition-all delay-75 duration-300 ease-out sm:text-xs ${
                         isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
                       }`}
+                    >
+                      Click for full details
+                    </span>
+                  </div>
+
+                  {/* Mobile Overlay — touch devices never trigger the hover
+                      overlay above, so this is a permanently-on version of
+                      it: same full-image dark scrim, caustic light layer,
+                      title, and "Click for full details" cue. Two
+                      deliberate differences from the desktop hover
+                      treatment: the backdrop blur is dialed down 50% (2px
+                      vs. 4px) so the screenshot underneath reads more
+                      clearly without a pointer to first reveal it, and the
+                      caustic light animation runs 50% more intensely
+                      (faster loop + higher opacity) to bring some of the
+                      motion/energy that hover normally supplies for free.
+                      Hidden on devices that support real hover, where the
+                      overlay above already does this job on demand. */}
+                  <div className="pointer-events-none absolute inset-0 hidden flex-col items-center justify-center gap-2 overflow-hidden bg-black/60 px-5 text-center backdrop-blur-[2px] [@media(hover:none)]:flex">
+                    {/* Caustic light layer — same two drifting accent-color
+                        blobs as the desktop version, but 50% faster and
+                        50% more opaque so they stay noticeable even though
+                        the blur behind them is lighter. */}
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0"
+                      style={{ mixBlendMode: 'screen' }}
+                    >
+                      <div
+                        className="absolute -left-1/4 -top-1/4 h-3/4 w-3/4 rounded-full opacity-100 blur-2xl"
+                        style={{
+                          background:
+                            'radial-gradient(circle, rgba(232,131,78,1), transparent 70%)',
+                          animation: 'projectCausticDriftA 5.7s ease-in-out infinite',
+                        }}
+                      />
+                      <div
+                        className="absolute -bottom-1/4 -right-1/4 h-3/4 w-3/4 rounded-full opacity-90 blur-2xl"
+                        style={{
+                          background:
+                            'radial-gradient(circle, rgba(194,84,44,1), transparent 70%)',
+                          animation: 'projectCausticDriftB 6.97s ease-in-out infinite',
+                        }}
+                      />
+                    </div>
+
+                    <h3 className="relative z-10 text-base font-semibold text-white sm:text-lg">
+                      {project.title}
+                    </h3>
+                    <span
+                      className="relative z-10 text-[11px] font-medium uppercase tracking-[0.15em] text-[#E8834E] sm:text-xs"
+                      style={{ animation: 'projectCtaGlow 2.4s ease-in-out infinite' }}
                     >
                       Click for full details
                     </span>
@@ -568,10 +661,8 @@ function FeaturedProjects() {
                     Project Gallery
                   </p>
                   <div
-                    className={`mt-3 grid gap-3 ${
-                      selectedProject.gallery.length === 1
-                        ? 'grid-cols-1'
-                        : 'grid-cols-2'
+                    className={`mt-3 grid grid-cols-1 gap-4 sm:gap-3 ${
+                      selectedProject.gallery.length > 1 ? 'sm:grid-cols-2' : ''
                     }`}
                   >
                     {selectedProject.gallery.map((item) => (
@@ -591,7 +682,7 @@ function FeaturedProjects() {
                           className={`w-full object-cover transition-transform duration-300 ease-out group-hover:scale-110 ${
                             selectedProject.gallery!.length === 1
                               ? 'aspect-[16/9]'
-                              : 'aspect-[4/3]'
+                              : 'aspect-[16/10] sm:aspect-[4/3]'
                           } ${enlargedImage === item.src ? 'scale-110' : 'scale-100'}`}
                         />
 
