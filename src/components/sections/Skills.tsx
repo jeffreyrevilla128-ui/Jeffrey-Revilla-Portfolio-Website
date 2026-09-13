@@ -1,4 +1,4 @@
-import { useRef, useState, type ComponentType } from 'react'
+import { useEffect, useRef, useState, type ComponentType } from 'react'
 import {
   SiReact,
   SiTypescript,
@@ -32,6 +32,7 @@ import {
   FileText,
   FileSpreadsheet,
   Presentation,
+  X,
 } from 'lucide-react'
 
 /* ------------------------------------------------------------------ */
@@ -199,6 +200,10 @@ const iconMap: Record<string, IconEntry> = {
 
 const fallbackIcon: IconEntry = { Icon: Code2, color: '#C2542C' }
 
+function getIconEntry(skill: Skill): IconEntry {
+  return (skill.icon && iconMap[skill.icon]) || fallbackIcon
+}
+
 /* ------------------------------------------------------------------ */
 /*  Skill Icon Grid                                                    */
 /*  Idle: compact icon tiles, auto-scrolling in an endless loop.       */
@@ -217,7 +222,7 @@ interface SkillIconGridProps {
 function SkillIconGrid({ skills, active, direction }: SkillIconGridProps) {
   // Idle/preview row: icon only, on a white square.
   const renderIconTile = (skill: Skill, key: string) => {
-    const { Icon, color } = (skill.icon && iconMap[skill.icon]) || fallbackIcon
+    const { Icon, color } = getIconEntry(skill)
 
     return (
       <div
@@ -237,7 +242,7 @@ function SkillIconGrid({ skills, active, direction }: SkillIconGridProps) {
   // white hovered-card background — so colors here are tuned for that,
   // not the dark idle card.
   const renderDetailRow = (skill: Skill, key: string) => {
-    const { Icon, color } = (skill.icon && iconMap[skill.icon]) || fallbackIcon
+    const { Icon, color } = getIconEntry(skill)
     const proficiency = skill.proficiency ?? 75
     // Always use the true brand color: on white, even the near-black marks
     // (GitHub, Express) read with plenty of contrast, so the white
@@ -313,6 +318,115 @@ function SkillIconGrid({ skills, active, direction }: SkillIconGridProps) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Mobile Skill Sheet                                                 */
+/*  Phones have no hover state, so tapping a category can't "reveal"   */
+/*  content in place the way desktop hover does — there's no room in   */
+/*  a compact card to show a whole tool list and still be readable.    */
+/*  Instead the card stays compact and a tap opens this modal: a tall, */
+/*  white panel centered on screen (deliberately breaking from the     */
+/*  dark page so the tool list is unmistakably a distinct layer), with */
+/*  each tool as its own shadowed row, stacked one per line. Desktop's */
+/*  inline hover-reveal is untouched; this only ever renders on small  */
+/*  screens (`sm:hidden`).                                             */
+/* ------------------------------------------------------------------ */
+
+function MobileSkillTile({ skill }: { skill: Skill }) {
+  const { Icon, color } = getIconEntry(skill)
+  const proficiency = skill.proficiency ?? 75
+
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-[0_8px_20px_-8px_rgba(0,0,0,0.18)] ring-1 ring-neutral-900/5">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-neutral-50 shadow-inner">
+        <Icon size={20} color={color} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="truncate text-[13px] font-medium text-neutral-900">{skill.name}</p>
+          <span className="shrink-0 text-[11px] font-semibold" style={{ color }}>
+            {proficiency}%
+          </span>
+        </div>
+        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${proficiency}%`, backgroundColor: color }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface MobileSkillSheetProps {
+  category: SkillCategory | null
+  open: boolean
+  onClose: () => void
+}
+
+function MobileSkillSheet({ category, open, onClose }: MobileSkillSheetProps) {
+  // Keep the last category rendered while the sheet is animating closed,
+  // so the panel doesn't blank out mid-transition. Once fully closed
+  // (`category` becomes null after the parent's timeout) this unmounts.
+  if (!category) return null
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-5 sm:hidden ${
+        open ? '' : 'pointer-events-none'
+      }`}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${category.title} tools`}
+    >
+      {/* Backdrop */}
+      <div
+        aria-hidden="true"
+        onClick={onClose}
+        className={`absolute inset-0 bg-black/70 transition-opacity duration-300 ease-out ${
+          open ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+
+      {/* Panel — white, centered, and tall so the tool list reads clearly
+          against a page that's otherwise all dark/orange. */}
+      <div
+        className={`relative flex h-[78vh] w-full max-w-sm flex-col rounded-3xl bg-white shadow-[0_30px_70px_-15px_rgba(0,0,0,0.5)] transition-all duration-300 ease-out ${
+          open ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        }`}
+      >
+        {/* Header */}
+        <div className="flex shrink-0 items-start justify-between gap-4 px-5 pt-5">
+          <div className="min-w-0">
+            <h3 className="text-base font-bold text-neutral-900">{category.title}</h3>
+            <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
+              {category.description}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-neutral-900"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Tools — one per line, stacked vertically */}
+        <div
+          className="mt-4 flex flex-1 flex-col gap-2.5 overflow-y-auto px-5 pb-5 [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          {category.skills.map((skill) => (
+            <MobileSkillTile key={skill.name} skill={skill} />
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
 /*  Skills Section                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -326,6 +440,55 @@ function Skills() {
   // the glow layers track. Same approach as Hero's background.
   const [cursor, setCursor] = useState({ x: 0.5, y: 0.5 })
   const sectionRef = useRef<HTMLElement | null>(null)
+
+  // True for devices with a real mouse (can actually hover). Phones and
+  // most tablets report false, which routes taps to the bottom sheet
+  // below instead of the desktop inline hover-reveal. Re-checked on
+  // change so a window resize / external-mouse connect stays accurate.
+  const [hasHover, setHasHover] = useState(
+    () => typeof window === 'undefined' || window.matchMedia('(hover: hover) and (pointer: fine)').matches,
+  )
+
+  useEffect(() => {
+    const query = window.matchMedia('(hover: hover) and (pointer: fine)')
+    const handleChange = (event: MediaQueryListEvent) => setHasHover(event.matches)
+    query.addEventListener('change', handleChange)
+    return () => query.removeEventListener('change', handleChange)
+  }, [])
+
+  // Mobile bottom sheet: `sheetCategory` stays populated through the
+  // closing transition (see MobileSkillSheet) so the panel doesn't blank
+  // out before it finishes sliding down; `sheetOpen` drives the transition.
+  const [sheetCategory, setSheetCategory] = useState<SkillCategory | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
+
+  const openSheet = (category: SkillCategory) => {
+    setSheetCategory(category)
+    requestAnimationFrame(() => setSheetOpen(true))
+  }
+
+  const closeSheet = () => {
+    setSheetOpen(false)
+    window.setTimeout(() => setSheetCategory(null), 300)
+  }
+
+  // Close on Escape, and lock page scroll while the sheet is open.
+  useEffect(() => {
+    if (!sheetCategory) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeSheet()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [sheetCategory])
 
   const handleMouseMove = (event: React.MouseEvent<HTMLElement>) => {
     const section = sectionRef.current
@@ -444,17 +607,29 @@ function Skills() {
               return (
                 <article
                   key={category.id}
-                  onMouseEnter={() => setActiveId(category.id)}
-                  onMouseLeave={() => setActiveId(null)}
+                  onMouseEnter={() => hasHover && setActiveId(category.id)}
+                  onMouseLeave={() => hasHover && setActiveId(null)}
                   onClick={() =>
-                    setActiveId((current) => (current === category.id ? null : category.id))
+                    hasHover
+                      ? setActiveId((current) => (current === category.id ? null : category.id))
+                      : openSheet(category)
                   }
-                  onFocus={() => setActiveId(category.id)}
-                  onBlur={() => setActiveId(null)}
+                  onFocus={() => hasHover && setActiveId(category.id)}
+                  onBlur={() => hasHover && setActiveId(null)}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter' && event.key !== ' ') return
+                    event.preventDefault()
+                    hasHover
+                      ? setActiveId((current) => (current === category.id ? null : category.id))
+                      : openSheet(category)
+                  }}
                   tabIndex={0}
                   role="button"
-                  aria-expanded={isActive}
-                  aria-label={`${category.title} — show tech stack`}
+                  aria-haspopup={hasHover ? undefined : 'dialog'}
+                  aria-expanded={hasHover ? isActive : sheetCategory?.id === category.id}
+                  aria-label={
+                    hasHover ? `${category.title} — show tech stack` : `${category.title} — view tools`
+                  }
                   className={`group relative h-52 flex-1 cursor-pointer overflow-hidden rounded-t-2xl rounded-b-none border bg-neutral-900 px-5 text-center shadow-[0_35px_45px_-20px_rgba(0,0,0,0.55)] transition-all duration-500 ease-out focus-visible:outline-none sm:h-96 lg:h-[420px] ${
                     isActive
                       ? 'border-[#C2542C] shadow-[0_35px_50px_-18px_rgba(0,0,0,0.6),0_0_30px_rgba(194,84,44,0.35)]'
@@ -510,6 +685,9 @@ function Skills() {
                     <p className="mt-2 max-w-[220px] text-[11px] font-medium leading-relaxed text-neutral-400 sm:mt-3 sm:max-w-[260px] sm:text-xs">
                       {category.description}
                     </p>
+                    <span className="mt-3 text-[10px] font-medium text-[#E8834E]/80 sm:hidden">
+                      Tap to explore ↗
+                    </span>
                   </div>
                 </article>
               )
@@ -517,6 +695,8 @@ function Skills() {
           </div>
         </div>
       </div>
+
+      <MobileSkillSheet category={sheetCategory} open={sheetOpen} onClose={closeSheet} />
     </section>
   )
 }
