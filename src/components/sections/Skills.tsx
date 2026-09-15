@@ -32,6 +32,9 @@ import {
   FileText,
   FileSpreadsheet,
   Presentation,
+  ArrowRight,
+  Server,
+  Wrench,
   X,
 } from 'lucide-react'
 
@@ -53,6 +56,8 @@ interface SkillCategory {
   id: string
   title: string
   description: string
+  /** Key into categoryIconMap — shown as a small avatar in the mobile sheet header. */
+  icon: string
   skills: Skill[]
 }
 
@@ -62,6 +67,7 @@ const skillCategories: SkillCategory[] = [
     title: 'Frontend',
     description:
       'Building responsive, interactive, and user-focused web interfaces.',
+    icon: 'code',
     skills: [
       { name: 'React', description: 'Component-based frontend development', icon: 'react', proficiency: 75 },
       { name: 'TypeScript', description: 'Typed application development', icon: 'typescript', proficiency: 85 },
@@ -76,6 +82,7 @@ const skillCategories: SkillCategory[] = [
     title: 'Backend',
     description:
       'Developing server-side applications, APIs, and application logic.',
+    icon: 'server',
     skills: [
       { name: 'Node.js', description: 'JavaScript runtime for backend applications', icon: 'nodejs', proficiency: 85 },
       { name: 'Express.js', description: 'REST API and server-side development', icon: 'express', proficiency: 82 },
@@ -88,6 +95,7 @@ const skillCategories: SkillCategory[] = [
     title: 'Database',
     description:
       'Working with relational databases and application data structures.',
+    icon: 'database',
     skills: [
       { name: 'PostgreSQL', description: 'Relational database development', icon: 'postgresql', proficiency: 80 },
       { name: 'pgAdmin', description: 'PostgreSQL database management', icon: 'pgadmin', proficiency: 78 },
@@ -100,6 +108,7 @@ const skillCategories: SkillCategory[] = [
     title: 'Third Party Integrations',
     description:
       'Connecting pretrained AI models, APIs, and external services to existing applications and workflows.',
+    icon: 'sparkles',
     skills: [
       { name: 'AI Model Integration', description: 'Connecting pretrained AI models to application workflows', icon: 'ai-model', proficiency: 78 },
       { name: 'AI APIs', description: 'Wiring third-party AI services into existing systems', icon: 'ai-api', proficiency: 80 },
@@ -113,6 +122,7 @@ const skillCategories: SkillCategory[] = [
     title: 'Development Tools',
     description:
       'Tools used for development, testing, version control, and application deployment.',
+    icon: 'wrench',
     skills: [
       { name: 'Git', description: 'Version control', icon: 'git', proficiency: 90 },
       { name: 'GitHub', description: 'Source control and collaboration', icon: 'github', proficiency: 88 },
@@ -126,6 +136,7 @@ const skillCategories: SkillCategory[] = [
     title: 'Data Entry & Documentation',
     description:
       'Organizing, documenting, and managing data and records with everyday office tools.',
+    icon: 'file-text',
     skills: [
       { name: 'Google Docs', description: 'Document creation and collaboration', icon: 'googledocs', proficiency: 92 },
       { name: 'Google Sheets', description: 'Spreadsheet data entry and analysis', icon: 'googlesheets', proficiency: 90 },
@@ -163,17 +174,17 @@ interface IconEntry {
 // instead of inheriting black/gray text. Generic (non-branded) icons get
 // a hand-picked accent color instead, since they have no official mark.
 const iconMap: Record<string, IconEntry> = {
-  react: { Icon: SiReact, color: '#61DAFB' },
+  react: { Icon: SiReact, color: '#0891B2' },
   typescript: { Icon: SiTypescript, color: '#3178C6' },
   vuejs: { Icon: SiVuedotjs, color: '#4FC08D' },
-  tailwindcss: { Icon: SiTailwindcss, color: '#06B6D4' },
+  tailwindcss: { Icon: SiTailwindcss, color: '#0E7490' },
   html5: { Icon: SiHtml5, color: '#E34F26' },
   css3: { Icon: SiCss, color: '#663399' },
   nodejs: { Icon: SiNodedotjs, color: '#5FA04E' },
   express: { Icon: SiExpress, color: '#000000', barColor: '#FFFFFF' }, // official mark is near-black; shown on a white tile, white bar for visibility
   laravel: { Icon: SiLaravel, color: '#FF2D20' },
   postgresql: { Icon: SiPostgresql, color: '#4169E1' },
-  supabase: { Icon: SiSupabase, color: '#3ECF8E' },
+  supabase: { Icon: SiSupabase, color: '#059669' },
   git: { Icon: SiGit, color: '#F05032' },
   github: { Icon: SiGithub, color: '#181717', barColor: '#FFFFFF' }, // official mark is near-black; shown on a white tile, white bar for visibility
   docker: { Icon: SiDocker, color: '#2496ED' },
@@ -188,20 +199,84 @@ const iconMap: Record<string, IconEntry> = {
   // No official brand mark available for these — generic icons with a
   // fitting accent color instead.
   vscode: { Icon: FileCode2, color: '#007ACC' }, // VS Code's real brand blue
-  'rest-api': { Icon: Network, color: '#0EA5E9' },
+  'rest-api': { Icon: Network, color: '#0369A1' },
   pgadmin: { Icon: Database, color: '#336791' },
   pgvector: { Icon: Database, color: '#4169E1' },
-  'ai-model': { Icon: Brain, color: '#8B5CF6' },
-  'ai-api': { Icon: Sparkles, color: '#A855F7' },
-  oauth: { Icon: KeyRound, color: '#F59E0B' },
-  webhooks: { Icon: Webhook, color: '#10B981' },
-  'third-party-api': { Icon: Share2, color: '#06B6D4' },
+  'ai-model': { Icon: Brain, color: '#6D28D9' },
+  'ai-api': { Icon: Sparkles, color: '#7E22CE' },
+  oauth: { Icon: KeyRound, color: '#B45309' },
+  webhooks: { Icon: Webhook, color: '#047857' },
+  'third-party-api': { Icon: Share2, color: '#1D4ED8' },
 }
 
 const fallbackIcon: IconEntry = { Icon: Code2, color: '#C2542C' }
 
 function getIconEntry(skill: Skill): IconEntry {
   return (skill.icon && iconMap[skill.icon]) || fallbackIcon
+}
+
+// Small set of generic icons representing each category as a whole (not a
+// specific tool) — used only for the avatar in the mobile bottom-sheet
+// header. Always shown in the site's burnt-orange accent, not a brand color.
+const categoryIconMap: Record<string, IconComponent> = {
+  code: Code2,
+  server: Server,
+  database: Database,
+  sparkles: Sparkles,
+  wrench: Wrench,
+  'file-text': FileText,
+}
+
+function getCategoryIcon(category: SkillCategory): IconComponent {
+  return categoryIconMap[category.icon] || Code2
+}
+
+/* ------------------------------------------------------------------ */
+/*  Animated Proficiency Bar                                          */
+/*  Starts at 0% and fills to the real value the moment it mounts —   */
+/*  i.e. the moment a skill row actually becomes visible (desktop     */
+/*  hover-reveal, or the mobile sheet opening). A double rAF defers   */
+/*  the width change to the frame *after* the 0% state has painted,   */
+/*  so the browser has something to transition from instead of       */
+/*  jumping straight to the final width.                              */
+/* ------------------------------------------------------------------ */
+
+function AnimatedProficiencyBar({
+  proficiency,
+  color,
+  trackClassName,
+}: {
+  proficiency: number
+  color: string
+  trackClassName: string
+}) {
+  const [filled, setFilled] = useState(false)
+
+  useEffect(() => {
+    setFilled(false)
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setFilled(true))
+    })
+    return () => {
+      cancelAnimationFrame(raf1)
+      cancelAnimationFrame(raf2)
+    }
+  }, [proficiency])
+
+  return (
+    <div className={trackClassName}>
+      {/* Full-width bar scaled down/up via transform rather than animating
+          `width` — transform is handled on the compositor thread (no layout
+          recalculation on every frame), so it stays smooth even when
+          several bars are animating at once, as happens whenever a desktop
+          card reveals its whole skill list together. */}
+      <div
+        className="h-full w-full origin-left rounded-full transition-transform duration-[1600ms] ease-out will-change-transform"
+        style={{ transform: `scaleX(${filled ? proficiency / 100 : 0})`, backgroundColor: color }}
+      />
+    </div>
+  )
 }
 
 /* ------------------------------------------------------------------ */
@@ -272,9 +347,10 @@ function SkillIconGrid({ skills, active, direction }: SkillIconGridProps) {
             </p>
           )}
           <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-neutral-900/10">
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${proficiency}%`, backgroundColor: fillColor }}
+            <AnimatedProficiencyBar
+              proficiency={proficiency}
+              color={fillColor}
+              trackClassName="h-full w-full"
             />
           </div>
         </div>
@@ -346,10 +422,16 @@ function MobileSkillTile({ skill }: { skill: Skill }) {
             {proficiency}%
           </span>
         </div>
+        {skill.description && (
+          <p className="mt-0.5 truncate text-[11px] leading-tight text-neutral-500">
+            {skill.description}
+          </p>
+        )}
         <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100">
-          <div
-            className="h-full rounded-full"
-            style={{ width: `${proficiency}%`, backgroundColor: color }}
+          <AnimatedProficiencyBar
+            proficiency={proficiency}
+            color={color}
+            trackClassName="h-full w-full"
           />
         </div>
       </div>
@@ -368,6 +450,8 @@ function MobileSkillSheet({ category, open, onClose }: MobileSkillSheetProps) {
   // so the panel doesn't blank out mid-transition. Once fully closed
   // (`category` becomes null after the parent's timeout) this unmounts.
   if (!category) return null
+
+  const CategoryIcon = getCategoryIcon(category)
 
   return (
     <div
@@ -394,13 +478,26 @@ function MobileSkillSheet({ category, open, onClose }: MobileSkillSheetProps) {
           open ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >
+        {/* Drag handle — visual affordance suggesting the sheet can be
+            swiped closed, even though the swipe gesture itself isn't wired
+            up (close is via the X, backdrop, outside tap, or Escape). */}
+        <div
+          aria-hidden="true"
+          className="mx-auto mt-2.5 h-1.5 w-10 shrink-0 rounded-full bg-neutral-300"
+        />
+
         {/* Header */}
-        <div className="flex shrink-0 items-start justify-between gap-4 px-5 pt-5">
-          <div className="min-w-0">
-            <h3 className="text-base font-bold text-neutral-900">{category.title}</h3>
-            <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
-              {category.description}
-            </p>
+        <div className="flex shrink-0 items-start justify-between gap-4 px-5 pt-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C2542C]/10">
+              <CategoryIcon size={20} color="#C2542C" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-base font-bold text-neutral-900">{category.title}</h3>
+              <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
+                {category.description}
+              </p>
+            </div>
           </div>
           <button
             type="button"
@@ -417,6 +514,9 @@ function MobileSkillSheet({ category, open, onClose }: MobileSkillSheetProps) {
           className="mt-4 flex flex-1 flex-col gap-2.5 overflow-y-auto px-5 pb-5 [&::-webkit-scrollbar]:hidden"
           style={{ scrollbarWidth: 'none' }}
         >
+          <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#C2542C]">
+            Skills
+          </span>
           {category.skills.map((skill) => (
             <MobileSkillTile key={skill.name} skill={skill} />
           ))}
@@ -434,6 +534,11 @@ function Skills() {
   // Tracks which card is currently active (hovered / focused / tapped),
   // so that card alone can swap its own content in place — no modal.
   const [activeId, setActiveId] = useState<string | null>(null)
+
+  // Mobile only: briefly flashes an accent-colored glow on the tapped card
+  // the instant it's tapped, before the bottom sheet slides in — a quick
+  // "acknowledged" flash rather than the static hover border desktop gets.
+  const [tappedId, setTappedId] = useState<string | null>(null)
 
   // Cursor position for the interactive background grid below, reprojected
   // to 0%..100% so it can drive the --cursor-x/--cursor-y CSS vars that
@@ -463,8 +568,10 @@ function Skills() {
   const [sheetOpen, setSheetOpen] = useState(false)
 
   const openSheet = (category: SkillCategory) => {
+    setTappedId(category.id)
     setSheetCategory(category)
     requestAnimationFrame(() => setSheetOpen(true))
+    window.setTimeout(() => setTappedId(null), 450)
   }
 
   const closeSheet = () => {
@@ -574,6 +681,14 @@ function Skills() {
           from { transform: translateY(-50%); }
           to { transform: translateY(0); }
         }
+        @keyframes skillTapGlow {
+          0% {
+            box-shadow: 0 0 0 3px rgba(232,131,78,0.65), 0 0 46px rgba(232,131,78,0.55);
+          }
+          100% {
+            box-shadow: 0 0 0 3px rgba(232,131,78,0), 0 0 46px rgba(232,131,78,0);
+          }
+        }
       `}</style>
 
       <div className="relative z-10 mx-auto max-w-7xl">
@@ -630,16 +745,27 @@ function Skills() {
                   aria-label={
                     hasHover ? `${category.title} — show tech stack` : `${category.title} — view tools`
                   }
-                  className={`group relative h-52 flex-1 cursor-pointer overflow-hidden rounded-t-2xl rounded-b-none border bg-neutral-900 px-5 text-center shadow-[0_35px_45px_-20px_rgba(0,0,0,0.55)] transition-all duration-500 ease-out focus-visible:outline-none sm:h-96 lg:h-[420px] ${
+                  style={tappedId === category.id ? { animation: 'skillTapGlow 450ms ease-out' } : undefined}
+                  className={`group relative h-52 flex-1 cursor-pointer overflow-hidden rounded-t-2xl rounded-b-none border bg-neutral-900 px-5 text-center shadow-[0_35px_45px_-20px_rgba(0,0,0,0.55)] transition-all duration-500 ease-out focus-visible:outline-none active:scale-[0.97] sm:h-96 lg:h-[420px] sm:active:scale-100 ${
                     isActive
                       ? 'border-[#C2542C] shadow-[0_35px_50px_-18px_rgba(0,0,0,0.6),0_0_30px_rgba(194,84,44,0.35)]'
-                      : 'border-white/10 hover:border-[#C2542C]/50'
+                      : 'border-[#C2542C]/35 shadow-[0_0_18px_rgba(194,84,44,0.12)] sm:border-white/10 sm:shadow-[0_35px_45px_-20px_rgba(0,0,0,0.55)] sm:hover:border-[#C2542C]/50'
                   }`}
                 >
                   {/* Category Number */}
                   <span className="absolute left-4 top-4 z-20 text-xs font-semibold tracking-wider text-[#C2542C]">
                     {String(index + 1).padStart(2, '0')}
                   </span>
+
+                  {/* Subtle accent wash — mobile idle cards only, so the card
+                      reads as interactive even without a hover state to rely
+                      on. Sits below everything else. */}
+                  {!isActive && (
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-[#C2542C]/10 via-transparent to-transparent sm:hidden"
+                    />
+                  )}
 
                   {/* White wipe layer — slides up from the bottom to fully cover
                       the card on hover/active, and slides back down on leave.
@@ -685,8 +811,9 @@ function Skills() {
                     <p className="mt-2 max-w-[220px] text-[11px] font-medium leading-relaxed text-neutral-400 sm:mt-3 sm:max-w-[260px] sm:text-xs">
                       {category.description}
                     </p>
-                    <span className="mt-3 text-[10px] font-medium text-[#E8834E]/80 sm:hidden">
-                      Tap to explore ↗
+                    <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#E8834E]/40 bg-[#E8834E]/10 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#E8834E] sm:hidden">
+                      Tap to Explore
+                      <ArrowRight size={12} className="shrink-0" />
                     </span>
                   </div>
                 </article>
