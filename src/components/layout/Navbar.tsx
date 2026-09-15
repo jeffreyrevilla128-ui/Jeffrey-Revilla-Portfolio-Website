@@ -4,7 +4,6 @@ import jrrLogo from '../../assets/images/jrr-logo.png'
 const navigationLinks = [
   { name: 'About', href: '#about' },
   { name: 'Skills', href: '#skills' },
-  { name: 'Experience', href: '#experience' },
   { name: 'Projects', href: '#projects' },
   { name: 'Contact', href: '#contact' },
 ]
@@ -148,9 +147,10 @@ function Navbar() {
           max-w-7xl
           items-center
           justify-between
-          px-5
-          py-3
+          px-4
+          py-2
           sm:px-8
+          sm:py-3
         "
       >
 
@@ -169,8 +169,8 @@ function Navbar() {
             relative
             z-20
             flex
-            h-12
-            w-[58px]
+            h-9
+            w-[46px]
             shrink-0
             items-center
             justify-center
@@ -179,16 +179,20 @@ function Navbar() {
             duration-300
             ease-[cubic-bezier(0.22,1,0.36,1)]
             hover:scale-105
+            sm:h-12
+            sm:w-[58px]
           "
         >
           <img
             src={jrrLogo}
             alt="JRR"
             className="
-              h-[38px]
+              h-7
               w-auto
-              max-w-[48px]
+              max-w-[36px]
               object-contain
+              sm:h-[38px]
+              sm:max-w-[48px]
             "
           />
         </a>
@@ -473,8 +477,8 @@ function Navbar() {
             relative
             z-20
             flex
-            h-11
-            w-11
+            h-9
+            w-9
             items-center
             justify-center
             rounded-full
@@ -508,8 +512,8 @@ function Navbar() {
             className="
               relative
               flex
-              h-4
-              w-4
+              h-3.5
+              w-3.5
               items-center
               justify-center
             "
@@ -520,7 +524,7 @@ function Navbar() {
                 left-1/2
                 top-1/2
                 h-px
-                w-4
+                w-3.5
                 -translate-x-1/2
                 -translate-y-1/2
                 bg-white
@@ -540,7 +544,7 @@ function Navbar() {
                 left-1/2
                 top-1/2
                 h-px
-                w-4
+                w-3.5
                 -translate-x-1/2
                 -translate-y-1/2
                 bg-white
@@ -561,11 +565,11 @@ function Navbar() {
           MOBILE EXPANDED MENU
           ===================================================== */}
 
-      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+      <div className="mx-auto max-w-7xl px-4 sm:px-8">
         <div
           className={`
             mx-auto
-            mt-3
+            mt-2
             max-w-sm
             overflow-hidden
             rounded-3xl
@@ -580,14 +584,14 @@ function Navbar() {
             md:hidden
             ${
               isMobileMenuOpen
-                ? 'max-h-[28rem] opacity-100'
+                ? 'max-h-[24rem] opacity-100'
                 : 'max-h-0 border-transparent opacity-0'
             }
           `}
         >
         <nav
           aria-label="Mobile navigation"
-          className="flex flex-col p-3"
+          className="flex flex-col p-2.5"
         >
           {navigationLinks.map((link, index) => (
             <a
@@ -596,7 +600,7 @@ function Navbar() {
               className="
                 rounded-2xl
                 px-4
-                py-3.5
+                py-3
                 text-sm
                 text-neutral-300
                 transition-all
@@ -622,7 +626,7 @@ function Navbar() {
               rounded-full
               bg-white
               px-5
-              py-3
+              py-2.5
               text-center
               text-sm
               font-medium

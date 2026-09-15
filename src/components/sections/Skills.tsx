@@ -768,23 +768,24 @@ function Skills() {
                   )}
 
                   {/* White wipe layer — slides up from the bottom to fully cover
-                      the card on hover/active, and slides back down on leave.
+                      the card on hover/active (desktop) or the instant it's
+                      tapped (mobile, right before the sheet takes over).
                       Sits above the card's own dark background but below the
                       icon field content, which is what actually needs to read
                       against it. */}
                   <div
                     aria-hidden="true"
                     className={`absolute inset-0 z-[1] bg-white transition-transform duration-500 ease-in-out ${
-                      isActive ? 'translate-y-0' : 'translate-y-full'
+                      isActive || tappedId === category.id ? 'translate-y-0' : 'translate-y-full'
                     }`}
                   />
 
                   {/* Icon field — a static, evenly arranged grid, blurred and
                       dimmed by default so it's only glimpsed behind the title;
-                      sharpens into full view once the card is active. */}
+                      sharpens into full view once the card is active or tapped. */}
                   <div
                     className={`absolute inset-0 z-[2] flex flex-col overflow-hidden px-4 pb-4 pt-9 transition-all duration-500 ease-out ${
-                      isActive
+                      isActive || tappedId === category.id
                         ? 'opacity-100 blur-none scale-100'
                         : 'opacity-50 blur-[3px] scale-105'
                     }`}
@@ -792,7 +793,7 @@ function Skills() {
                     <div className="relative min-h-0 flex-1">
                       <SkillIconGrid
                         skills={category.skills}
-                        active={isActive}
+                        active={isActive || tappedId === category.id}
                         direction={index % 2 === 0 ? 'up' : 'down'}
                       />
                     </div>
@@ -802,7 +803,7 @@ function Skills() {
                       fades out on hover to reveal the sharpened icons underneath. */}
                   <div
                     className={`pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/55 px-6 transition-all duration-500 ${
-                      isActive ? 'translate-y-2 opacity-0' : 'translate-y-0 opacity-100'
+                      isActive || tappedId === category.id ? 'translate-y-2 opacity-0' : 'translate-y-0 opacity-100'
                     }`}
                   >
                     <h3 className="text-base font-bold uppercase tracking-tight text-white sm:text-lg">
