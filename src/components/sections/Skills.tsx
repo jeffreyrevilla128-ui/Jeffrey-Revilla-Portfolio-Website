@@ -561,6 +561,26 @@ function Skills() {
     return () => query.removeEventListener('change', handleChange)
   }, [])
 
+  // True below the `sm` breakpoint (phones). Touch devices at or above it
+  // (tablets) are wide enough that the bottom sheet's own `sm:hidden`
+  // styling would hide it — those should get the same inline flip desktop
+  // gets via click, just triggered by tap instead of hover.
+  const [isNarrow, setIsNarrow] = useState(
+    () => typeof window === 'undefined' || window.matchMedia('(max-width: 639px)').matches,
+  )
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 639px)')
+    const handleChange = (event: MediaQueryListEvent) => setIsNarrow(event.matches)
+    query.addEventListener('change', handleChange)
+    return () => query.removeEventListener('change', handleChange)
+  }, [])
+
+  // Touch devices only get the bottom sheet on phone-width viewports.
+  // Touch devices at tablet width instead flip the card in place, same as
+  // desktop's click-to-toggle, so tapping a second card closes the first.
+  const usesSheet = !hasHover && isNarrow
+
   // Mobile bottom sheet: `sheetCategory` stays populated through the
   // closing transition (see MobileSkillSheet) so the panel doesn't blank
   // out before it finishes sliding down; `sheetOpen` drives the transition.
@@ -725,25 +745,25 @@ function Skills() {
                   onMouseEnter={() => hasHover && setActiveId(category.id)}
                   onMouseLeave={() => hasHover && setActiveId(null)}
                   onClick={() =>
-                    hasHover
-                      ? setActiveId((current) => (current === category.id ? null : category.id))
-                      : openSheet(category)
+                    usesSheet
+                      ? openSheet(category)
+                      : setActiveId((current) => (current === category.id ? null : category.id))
                   }
                   onFocus={() => hasHover && setActiveId(category.id)}
                   onBlur={() => hasHover && setActiveId(null)}
                   onKeyDown={(event) => {
                     if (event.key !== 'Enter' && event.key !== ' ') return
                     event.preventDefault()
-                    hasHover
-                      ? setActiveId((current) => (current === category.id ? null : category.id))
-                      : openSheet(category)
+                    usesSheet
+                      ? openSheet(category)
+                      : setActiveId((current) => (current === category.id ? null : category.id))
                   }}
                   tabIndex={0}
                   role="button"
-                  aria-haspopup={hasHover ? undefined : 'dialog'}
-                  aria-expanded={hasHover ? isActive : sheetCategory?.id === category.id}
+                  aria-haspopup={usesSheet ? 'dialog' : undefined}
+                  aria-expanded={usesSheet ? sheetCategory?.id === category.id : isActive}
                   aria-label={
-                    hasHover ? `${category.title} — show tech stack` : `${category.title} — view tools`
+                    usesSheet ? `${category.title} — view tools` : `${category.title} — show tech stack`
                   }
                   style={tappedId === category.id ? { animation: 'skillTapGlow 450ms ease-out' } : undefined}
                   className={`group relative h-52 flex-1 cursor-pointer overflow-hidden rounded-t-2xl rounded-b-none border bg-neutral-900 px-5 text-center shadow-[0_35px_45px_-20px_rgba(0,0,0,0.55)] transition-all duration-500 ease-out focus-visible:outline-none active:scale-[0.97] sm:h-96 lg:h-[420px] sm:active:scale-100 ${
@@ -812,10 +832,12 @@ function Skills() {
                     <p className="mt-2 max-w-[220px] text-[11px] font-medium leading-relaxed text-neutral-400 sm:mt-3 sm:max-w-[260px] sm:text-xs">
                       {category.description}
                     </p>
-                    <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#E8834E]/40 bg-[#E8834E]/10 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#E8834E] sm:hidden">
-                      Tap to Explore
-                      <ArrowRight size={12} className="shrink-0" />
-                    </span>
+                    {!hasHover && (
+                      <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#E8834E]/40 bg-[#E8834E]/10 px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-[#E8834E]">
+                        Tap to Explore
+                        <ArrowRight size={12} className="shrink-0" />
+                      </span>
+                    )}
                   </div>
                 </article>
               )

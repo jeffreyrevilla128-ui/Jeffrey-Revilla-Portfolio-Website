@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from 'react'
 import jrrLogo from '../../assets/images/jrr-logo.png'
 
 const navigationLinks = [
@@ -15,6 +15,42 @@ function Navbar() {
 
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  // =====================================================
+  // DESKTOP PILL OPEN WIDTH
+  //
+  // Measured from the actual nav content (via scrollWidth,
+  // which ignores the max-width clipping) so the pill always
+  // hugs however many links exist, while still animating
+  // smoothly — CSS can only transition to/from a concrete
+  // pixel value, never to "auto" or "fit-content".
+  // =====================================================
+
+  const navRef = useRef<HTMLElement>(null)
+  const [pillOpenWidth, setPillOpenWidth] = useState<number | null>(null)
+
+  useLayoutEffect(() => {
+    const BUTTON_WIDTH = 40 // h-10 w-10 toggle button
+    const NAV_MARGIN_LEFT = 8 // ml-2 on the nav
+    const PILL_PADDING = 16 // px-2 on both sides of the pill
+
+    const measure = () => {
+      if (navRef.current) {
+        setPillOpenWidth(
+          BUTTON_WIDTH +
+            NAV_MARGIN_LEFT +
+            PILL_PADDING +
+            navRef.current.scrollWidth,
+        )
+      }
+    }
+
+    measure()
+
+    window.addEventListener('resize', measure)
+
+    return () => window.removeEventListener('resize', measure)
+  }, [])
 
   // =====================================================
   // DESKTOP MENU CLOSE TIMER
@@ -230,10 +266,16 @@ function Navbar() {
               ease-[cubic-bezier(0.22,1,0.36,1)]
               ${
                 isDesktopMenuOpen
-                  ? 'w-[430px] rounded-full px-2 py-2 shadow-[0_0_30px_rgba(255,255,255,0.10)]'
+                  ? 'rounded-full px-2 py-2 shadow-[0_0_30px_rgba(255,255,255,0.10)]'
                   : 'h-12 w-12 cursor-pointer rounded-full shadow-[0_0_25px_rgba(255,255,255,0.08)] hover:scale-110 hover:shadow-[0_0_45px_rgba(255,255,255,0.18)]'
               }
             `}
+            style={{
+              width:
+                isDesktopMenuOpen && pillOpenWidth
+                  ? `${pillOpenWidth}px`
+                  : undefined,
+            }}
           >
             {/* MOVING GLOW */}
 
@@ -382,6 +424,7 @@ function Navbar() {
             {/* DESKTOP LINKS */}
 
             <nav
+              ref={navRef}
               aria-label="Main navigation"
               className={`
                 relative
