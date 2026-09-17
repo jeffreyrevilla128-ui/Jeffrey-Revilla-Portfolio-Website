@@ -44,6 +44,33 @@ function Hero() {
         <div className="absolute left-1/3 top-1/3 h-[30rem] w-[30rem] rounded-full bg-white/[0.03] blur-3xl" />
         <div className="absolute right-[-10rem] top-1/2 h-80 w-80 rounded-full bg-white/[0.02] blur-3xl" />
 
+        {/* Caustic light accent — two soft, blurred accent-color blobs
+            drifting on slow independent loops, blended additively so
+            they read as warm light drifting through the scene rather
+            than flat colored shapes. Same treatment as the Featured
+            Projects hover overlay, re-tuned to run continuously here
+            (no hover state to key off in the hero) at low enough
+            opacity to sit as an ambient layer alongside the plain
+            white orbs above rather than compete with them. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{ mixBlendMode: 'screen' }}
+        >
+          <div
+            className="absolute left-[6%] top-[8%] h-[26rem] w-[26rem] rounded-full opacity-[0.055] blur-3xl [animation:heroCausticDriftA_17s_ease-in-out_infinite]"
+            style={{
+              background: 'radial-gradient(circle, rgba(232,131,78,1), transparent 70%)',
+            }}
+          />
+          <div
+            className="absolute right-[4%] bottom-[10%] h-[24rem] w-[24rem] rounded-full opacity-[0.05] blur-3xl [animation:heroCausticDriftB_20s_ease-in-out_infinite]"
+            style={{
+              background: 'radial-gradient(circle, rgba(194,84,44,1), transparent 70%)',
+            }}
+          />
+        </div>
+
         {/* Faint dot grid, always present at very low opacity — reads as
             circuitry/blueprint texture rather than decoration */}
         <div
@@ -148,6 +175,17 @@ function Hero() {
             transform: translateX(60px) scale(1.06);
             opacity: 0.1;
           }
+        }
+        @keyframes heroCausticDriftA {
+          0%   { transform: translate(-6%, -4%) scale(1); }
+          33%  { transform: translate(5%, 4%) scale(1.15); }
+          66%  { transform: translate(-3%, 6%) scale(0.92); }
+          100% { transform: translate(-6%, -4%) scale(1); }
+        }
+        @keyframes heroCausticDriftB {
+          0%   { transform: translate(5%, 6%) scale(1); }
+          50%  { transform: translate(-8%, -3%) scale(1.18); }
+          100% { transform: translate(5%, 6%) scale(1); }
         }
       `}</style>
 
