@@ -362,7 +362,7 @@ function FeaturedProjects() {
   return (
     <section
       id="projects"
-      className="border-t border-neutral-200 bg-white px-6 pb-24 pt-12 lg:px-8 lg:pb-32 lg:pt-16"
+      className="border-t border-neutral-200 bg-white px-6 pb-24 pt-16 sm:pt-20 lg:px-8 lg:pb-32 lg:pt-24"
     >
       {/* Keyframes for the caustic-light drift inside hovered project
           overlays — two blobs slowly wandering on independent, offset
