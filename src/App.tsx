@@ -1,3 +1,5 @@
+import CustomCursor from './components/ui/CustomCursor'
+
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 
@@ -10,6 +12,8 @@ import Contact from './components/sections/Contact'
 function App() {
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
+      <CustomCursor />
+
       <Navbar />
 
       <main>

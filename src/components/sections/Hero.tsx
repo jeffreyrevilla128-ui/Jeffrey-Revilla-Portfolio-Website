@@ -5,10 +5,8 @@ function Hero() {
   const [parallax, setParallax] = useState({ x: 0, y: 0 })
   const sectionRef = useRef<HTMLElement | null>(null)
 
-  // Gentle mouse-driven parallax for the portrait, ambient light, and the
-  // interactive grid glow below. relativeX/Y stay in -0.5..0.5 (used for
-  // translate3d math on the portrait); cursorX/Y are the same position
-  // reprojected to 0%..100% so the grid glow can track it via CSS vars.
+  // Gentle mouse-driven parallax for the portrait — stays in -0.5..0.5,
+  // used directly in the translate3d math below.
   const handleMouseMove = (event: React.MouseEvent<HTMLElement>) => {
     const section = sectionRef.current
     if (!section) return
@@ -22,9 +20,6 @@ function Hero() {
 
   const handleMouseLeave = () => setParallax({ x: 0, y: 0 })
 
-  const cursorX = `${(parallax.x + 0.5) * 100}%`
-  const cursorY = `${(parallax.y + 0.5) * 100}%`
-
   return (
     <section
       id="home"
@@ -32,7 +27,6 @@ function Hero() {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className="relative flex min-h-screen items-start justify-center overflow-hidden bg-neutral-950 px-6 pb-10 pt-40 sm:items-center sm:pb-16 sm:pt-28 lg:px-8"
-      style={{ ['--cursor-x' as string]: cursorX, ['--cursor-y' as string]: cursorY }}
     >
       {/* ================================================== */}
       {/* Background Decoration                               */}
@@ -41,83 +35,30 @@ function Hero() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 overflow-hidden"
       >
-        <div className="absolute left-1/3 top-1/3 h-[30rem] w-[30rem] rounded-full bg-white/[0.03] blur-3xl" />
-        <div className="absolute right-[-10rem] top-1/2 h-80 w-80 rounded-full bg-white/[0.02] blur-3xl" />
-
-        {/* Caustic light accent — two soft, blurred accent-color blobs
-            drifting on slow independent loops, blended additively so
-            they read as warm light drifting through the scene rather
-            than flat colored shapes. Same treatment as the Featured
-            Projects hover overlay, re-tuned to run continuously here
-            (no hover state to key off in the hero) at low enough
-            opacity to sit as an ambient layer alongside the plain
-            white orbs above rather than compete with them. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0"
-          style={{ mixBlendMode: 'screen' }}
-        >
+        {/* Ambient corner light — two soft, blurred burnt-orange/amber
+            glows that roam across the background rather than holding a
+            fixed position. Each animates translate, scale, rotation and
+            an asymmetric border-radius together, so the shape itself
+            keeps deforming (stretching, compressing, going slightly
+            lopsided) as it drifts — an irregular fluid glow rather than
+            a static circle sliding around. Kept at very low opacity and
+            heavy blur so it reads as ambient light, and on long,
+            non-matching loops (12s / 14.5s) so the two never fall into a
+            visibly repeating rhythm together. */}
+        <div className="absolute inset-0" style={{ mixBlendMode: 'screen' }}>
           <div
-            className="absolute left-[6%] top-[8%] h-[26rem] w-[26rem] rounded-full opacity-[0.055] blur-3xl [animation:heroCausticDriftA_17s_ease-in-out_infinite]"
+            className="absolute -left-24 -top-24 h-[26rem] w-[26rem] opacity-40 blur-3xl [animation:heroCausticDriftA_12s_ease-in-out_infinite] sm:-left-32 sm:-top-32 sm:h-[38rem] sm:w-[38rem]"
             style={{
               background: 'radial-gradient(circle, rgba(232,131,78,1), transparent 70%)',
             }}
           />
           <div
-            className="absolute right-[4%] bottom-[10%] h-[24rem] w-[24rem] rounded-full opacity-[0.05] blur-3xl [animation:heroCausticDriftB_20s_ease-in-out_infinite]"
+            className="absolute -bottom-24 -right-24 h-[24rem] w-[24rem] opacity-[0.35] blur-3xl [animation:heroCausticDriftB_14.5s_ease-in-out_infinite] sm:-bottom-32 sm:-right-32 sm:h-[34rem] sm:w-[34rem]"
             style={{
               background: 'radial-gradient(circle, rgba(194,84,44,1), transparent 70%)',
             }}
           />
         </div>
-
-        {/* Faint dot grid, always present at very low opacity — reads as
-            circuitry/blueprint texture rather than decoration */}
-        <div
-          className="absolute inset-0 opacity-[0.05]"
-          style={{
-            backgroundImage:
-              'radial-gradient(rgba(255,255,255,0.9) 1px, transparent 1.5px)',
-            backgroundSize: '28px 28px',
-          }}
-        />
-
-        {/* Same dot grid, lit in the accent gradient, but only revealed
-            in a soft circle that follows the cursor. Two mask layers
-            (the repeating dot shape, and the cursor spotlight) are
-            intersected so only nearby dots ever light up. */}
-        <div
-          className="absolute inset-0 hidden transition-opacity duration-500 sm:block"
-          style={{
-            opacity: 0.9,
-            backgroundImage: 'linear-gradient(135deg, #E8834E, #C2542C)',
-            WebkitMaskImage:
-              'radial-gradient(rgba(0,0,0,1) 1px, transparent 1.5px), radial-gradient(420px circle at var(--cursor-x) var(--cursor-y), rgba(0,0,0,1), transparent 72%)',
-            WebkitMaskSize: '28px 28px, 100% 100%',
-            WebkitMaskRepeat: 'repeat, no-repeat',
-            WebkitMaskComposite: 'source-in',
-            maskImage:
-              'radial-gradient(rgba(0,0,0,1) 1px, transparent 1.5px), radial-gradient(420px circle at var(--cursor-x) var(--cursor-y), rgba(0,0,0,1), transparent 72%)',
-            maskSize: '28px 28px, 100% 100%',
-            maskRepeat: 'repeat, no-repeat',
-            maskComposite: 'intersect',
-          }}
-        />
-
-        {/* Soft ambient wash of the accent gradient, centered on the
-            cursor — barely-there warmth, not a spotlight */}
-        <div
-          className="absolute inset-0 hidden sm:block"
-          style={{
-            background:
-              'radial-gradient(600px circle at var(--cursor-x) var(--cursor-y), rgba(232,131,78,0.06), transparent 70%)',
-          }}
-        />
-
-        {/* Geometric accents: one neutral, one carrying the burnt-orange
-            signature at low opacity as a quiet section marker */}
-        <div className="absolute left-[8%] top-[16%] h-24 w-24 rotate-45 rounded-2xl border border-white/[0.06]" />
-        <div className="absolute right-[8%] bottom-[12%] h-48 w-48 rounded-full border border-[#C2542C]/[0.28]" />
       </div>
 
       {/* ================================================== */}
@@ -177,15 +118,40 @@ function Hero() {
           }
         }
         @keyframes heroCausticDriftA {
-          0%   { transform: translate(-6%, -4%) scale(1); }
-          33%  { transform: translate(5%, 4%) scale(1.15); }
-          66%  { transform: translate(-3%, 6%) scale(0.92); }
-          100% { transform: translate(-6%, -4%) scale(1); }
+          0%, 100% {
+            transform: translate(0%, 0%) scale(1) rotate(0deg);
+            border-radius: 42% 58% 65% 35% / 45% 45% 55% 55%;
+          }
+          25% {
+            transform: translate(14%, 8%) scale(1.1) rotate(9deg);
+            border-radius: 58% 42% 48% 52% / 62% 38% 62% 38%;
+          }
+          50% {
+            transform: translate(6%, 18%) scale(0.92) rotate(-7deg);
+            border-radius: 48% 52% 38% 62% / 40% 60% 42% 58%;
+          }
+          75% {
+            transform: translate(-10%, 6%) scale(1.05) rotate(5deg);
+            border-radius: 65% 35% 55% 45% / 55% 45% 35% 65%;
+          }
         }
         @keyframes heroCausticDriftB {
-          0%   { transform: translate(5%, 6%) scale(1); }
-          50%  { transform: translate(-8%, -3%) scale(1.18); }
-          100% { transform: translate(5%, 6%) scale(1); }
+          0%, 100% {
+            transform: translate(0%, 0%) scale(1) rotate(0deg);
+            border-radius: 55% 45% 40% 60% / 50% 60% 40% 50%;
+          }
+          30% {
+            transform: translate(-13%, -10%) scale(1.12) rotate(-11deg);
+            border-radius: 40% 60% 58% 42% / 60% 40% 55% 45%;
+          }
+          60% {
+            transform: translate(-5%, -20%) scale(0.9) rotate(7deg);
+            border-radius: 62% 38% 45% 55% / 42% 58% 40% 60%;
+          }
+          85% {
+            transform: translate(10%, -7%) scale(1.06) rotate(-5deg);
+            border-radius: 48% 52% 60% 40% / 55% 45% 60% 40%;
+          }
         }
       `}</style>
 
