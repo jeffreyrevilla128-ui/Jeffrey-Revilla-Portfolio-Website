@@ -16,6 +16,20 @@ function Navbar() {
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
+  // Whether the whole header is slid up out of view. Driven by
+  // scroll direction (hide on scroll-down, show on scroll-up) and
+  // by hovering the cursor near the very top of the viewport, which
+  // always forces it back into view.
+  const [isHeaderHidden, setIsHeaderHidden] = useState(false)
+  const lastScrollYRef = useRef(0)
+
+  // The chrome (logo, header background/blur/border, "Let's Talk")
+  // fades in/out independently of the pill — it has its own delayed
+  // reveal so a quick pass over the hamburger doesn't flash it in.
+  const [isDesktopChromeVisible, setIsDesktopChromeVisible] = useState(false)
+
+  const isChromeVisible = isDesktopChromeVisible || isMobileMenuOpen
+
   // =====================================================
   // DESKTOP PILL OPEN WIDTH
   //
@@ -53,53 +67,61 @@ function Navbar() {
   }, [])
 
   // =====================================================
-  // DESKTOP MENU CLOSE TIMER
+  // CHROME FADE DELAY TIMER
+  //
+  // Only the fade (logo/header background/Let's Talk) is
+  // delayed — the pill itself reacts to hover instantly, no
+  // timer involved. Showing the chrome waits 300ms after the
+  // hamburger is hovered; hiding it is immediate the moment
+  // the pointer leaves, its softness coming entirely from the
+  // slower CSS transition on the fade itself, not from a delay.
   // =====================================================
 
-  const desktopCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(
+  const chromeShowTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   )
 
-  const clearDesktopCloseTimer = () => {
-    if (desktopCloseTimer.current) {
-      clearTimeout(desktopCloseTimer.current)
-      desktopCloseTimer.current = null
+  const CHROME_SHOW_DELAY_MS = 300
+
+  const clearChromeShowTimer = () => {
+    if (chromeShowTimer.current) {
+      clearTimeout(chromeShowTimer.current)
+      chromeShowTimer.current = null
     }
   }
 
   // =====================================================
   // DESKTOP MENU OPEN
+  //
+  // The pill opens the instant the hamburger is hovered — no
+  // delay. The chrome fade is scheduled separately, 300ms
+  // later, so it doesn't flash in on a quick pass-through.
   // =====================================================
 
   const openDesktopMenu = () => {
-    clearDesktopCloseTimer()
     setIsDesktopMenuOpen(true)
+
+    clearChromeShowTimer()
+    chromeShowTimer.current = setTimeout(() => {
+      setIsDesktopChromeVisible(true)
+      chromeShowTimer.current = null
+    }, CHROME_SHOW_DELAY_MS)
   }
 
   // =====================================================
   // DESKTOP MENU CLOSE
   //
-  // X button closes immediately.
+  // Both the pill and the chrome close the instant the
+  // pointer leaves (or the toggle button is clicked while
+  // open) — no lingering delay in either direction. The fade
+  // still looks soft purely because its own CSS transition is
+  // slow, not because the trigger is delayed.
   // =====================================================
 
   const closeDesktopMenu = () => {
-    clearDesktopCloseTimer()
+    clearChromeShowTimer()
     setIsDesktopMenuOpen(false)
-  }
-
-  // =====================================================
-  // DESKTOP MENU AUTO CLOSE
-  //
-  // Starts ONLY after leaving the menu.
-  // =====================================================
-
-  const scheduleDesktopMenuClose = () => {
-    clearDesktopCloseTimer()
-
-    desktopCloseTimer.current = setTimeout(() => {
-      setIsDesktopMenuOpen(false)
-      desktopCloseTimer.current = null
-    }, 5000)
+    setIsDesktopChromeVisible(false)
   }
 
   // =====================================================
@@ -128,26 +150,51 @@ function Navbar() {
   // =====================================================
   // SCROLL BEHAVIOR
   //
-  // The navbar itself no longer hides/shows on scroll — it
-  // stays fixed and visible at all times. We still close any
-  // open menu once the page starts scrolling, so an expanded
-  // menu doesn't stay open while the user is navigating away
-  // from it.
+  // The header slides up out of view on scroll-down and slides
+  // back down on scroll-up. We still close any open menu the
+  // moment the page starts scrolling, so an expanded menu
+  // doesn't stay open while the user is navigating away from it.
   // =====================================================
 
+  const REVEAL_HOVER_ZONE_PX = 24 // distance from top edge that forces the header back into view
+  const HIDE_START_THRESHOLD_PX = 96 // don't start hiding until scrolled past the header's own height
+
   useEffect(() => {
+    lastScrollYRef.current = window.scrollY
+
     const handleScroll = () => {
       setIsDesktopMenuOpen(false)
+      setIsDesktopChromeVisible(false)
       setIsMobileMenuOpen(false)
-      clearDesktopCloseTimer()
+      clearChromeShowTimer()
+
+      const currentScrollY = Math.max(window.scrollY, 0)
+      const lastScrollY = lastScrollYRef.current
+      const isScrollingDown = currentScrollY > lastScrollY
+
+      if (isScrollingDown && currentScrollY > HIDE_START_THRESHOLD_PX) {
+        setIsHeaderHidden(true)
+      } else if (!isScrollingDown) {
+        setIsHeaderHidden(false)
+      }
+
+      lastScrollYRef.current = currentScrollY
+    }
+
+    const handleMouseMove = (event: globalThis.MouseEvent) => {
+      if (event.clientY <= REVEAL_HOVER_ZONE_PX) {
+        setIsHeaderHidden(false)
+      }
     }
 
     window.addEventListener('scroll', handleScroll, {
       passive: true,
     })
+    window.addEventListener('mousemove', handleMouseMove)
 
     return () => {
       window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('mousemove', handleMouseMove)
     }
   }, [])
 
@@ -157,23 +204,33 @@ function Navbar() {
 
   useEffect(() => {
     return () => {
-      clearDesktopCloseTimer()
+      clearChromeShowTimer()
     }
   }, [])
 
   return (
     <header
-      className="
+      onMouseLeave={closeDesktopMenu}
+      className={`
         fixed
         inset-x-0
         top-0
         z-50
         border-b
-        border-white/10
-        bg-neutral-950/40
-        shadow-[0_8px_32px_rgba(0,0,0,0.35)]
-        backdrop-blur-xl
-      "
+        transition-all
+        duration-[800ms]
+        ease-[cubic-bezier(0.22,1,0.36,1)]
+        ${
+          isHeaderHidden
+            ? '-translate-y-full'
+            : 'translate-y-0'
+        }
+        ${
+          isChromeVisible
+            ? 'border-white/10 bg-neutral-950/40 shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-xl'
+            : 'border-transparent bg-transparent shadow-none backdrop-blur-none'
+        }
+      `}
     >
       <div
         className="
@@ -201,7 +258,8 @@ function Navbar() {
           href="#home"
           aria-label="Jeffrey R. Revilla — back to home"
           onClick={handleLogoClick}
-          className="
+          tabIndex={isChromeVisible ? 0 : -1}
+          className={`
             relative
             z-20
             flex
@@ -211,13 +269,18 @@ function Navbar() {
             items-center
             justify-center
             bg-transparent
-            transition-transform
-            duration-300
+            transition-all
+            duration-[800ms]
             ease-[cubic-bezier(0.22,1,0.36,1)]
             hover:scale-105
             sm:h-12
             sm:w-[58px]
-          "
+            ${
+              isChromeVisible
+                ? 'translate-y-0 opacity-100'
+                : 'pointer-events-none -translate-y-1 opacity-0'
+            }
+          `}
         >
           <img
             src={jrrLogo}
@@ -248,7 +311,6 @@ function Navbar() {
             md:block
           "
           onMouseEnter={openDesktopMenu}
-          onMouseLeave={scheduleDesktopMenuClose}
         >
           <div
             className={`
@@ -478,7 +540,8 @@ function Navbar() {
 
         <a
           href="#contact"
-          className="
+          tabIndex={isChromeVisible ? 0 : -1}
+          className={`
             relative
             z-20
             hidden
@@ -493,12 +556,17 @@ function Navbar() {
             font-medium
             text-white
             transition-all
-            duration-300
+            duration-[800ms]
             hover:border-white/30
             hover:bg-white
             hover:text-black
             md:block
-          "
+            ${
+              isChromeVisible
+                ? 'translate-y-0 opacity-100'
+                : 'pointer-events-none -translate-y-1 opacity-0'
+            }
+          `}
         >
           Let's Talk
         </a>
